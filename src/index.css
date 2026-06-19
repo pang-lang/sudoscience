@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  --color-we-red: #e30613;
+  --color-we-blue: #0b192f;
+  --color-we-navy: #0f1d3a;
+  --color-we-slate-50: #f8fafc;
+  --color-we-slate-100: #f1f5f9;
+  --color-we-slate-200: #e2e8f0;
+  --color-we-slate-300: #cbd5e1;
+  --color-we-slate-400: #94a3b8;
+  --color-we-slate-500: #64748b;
+  --color-we-slate-600: #475569;
+  --color-we-slate-700: #334155;
+  --color-we-slate-800: #1e293b;
+  --color-we-slate-900: #0f172a;
+  --color-we-slate-950: #020617;
+}
+
+/* Custom fade effects and smooth animations */
+.transition-all-custom {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ticket-scanline {
+  background: linear-gradient(to bottom, rgba(227, 6, 19, 0) 0%, rgba(227, 6, 19, 0.5) 50%, rgba(227, 6, 19, 0) 100%);
+  animation: scan 3s linear infinite;
+}
+
+@keyframes scan {
+  0% { top: 0%; }
+  100% { top: 100%; }
+}

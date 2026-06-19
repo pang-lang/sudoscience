@@ -1,0 +1,6 @@
+{
+  "name": "WE Connect",
+  "description": "An interactive Student, Corporate Academic Recruiter, and Educator engagement portal for Würth Elektronik excellence initiatives, featuring student passports, masterclass bookings, skill portfolios, recruiter pipelines, and dynamic educator toolsets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
