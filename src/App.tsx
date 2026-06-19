@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { UserRole } from './types';
-import RoleSelector from './components/RoleSelector';
-import StudentPortal from './components/StudentPortal';
-import RecruiterPortal from './components/RecruiterPortal';
-import EducatorPortal from './components/EducatorPortal';
+import RoleSelector from './components/shared/RoleSelector';
+import StudentPortal from './components/student/StudentPortal';
+import RecruiterPortal from './components/recruiter/RecruiterPortal';
+import EducatorPortal from './components/educator/EducatorPortal';
 
 export default function App() {
   const [role, setRole] = useState<UserRole>(null);
