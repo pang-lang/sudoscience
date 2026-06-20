@@ -238,42 +238,31 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     });
   };
 
-  // Network Stack / Tinder Swipe Cards
-  const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([
-    {
-      id: 'n1',
-      name: 'Sarah Weber',
-      age: 28,
-      role: 'Senior Mechanical Design Engineer',
-      university: 'Würth Elektronik GmbH',
-      tags: ['Senior Engineer', 'EMC Specialist', 'WE Mentor'],
-      skills: ['SolidWorks Pro', 'FEA Modeling', 'Thermal Dissipation', 'CAD Optimization'],
-      description: 'Hi Sarah! I specialize in mechanical housing shielding for EMI-critical boards. Super excited to mentor students bridging physical dynamics and signal integrity.',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300'
-    },
-    {
-      id: 'n2',
-      name: 'Elias K.',
-      age: 32,
-      role: 'Principal IoT Solutions Architect',
-      university: 'Würth Elektronik Expert',
-      tags: ['RFID Lead', 'Product Manager', 'Speaker'],
-      skills: ['RFID Hardware', 'NFC Design', 'Embedded Systems', 'MQTT Protocol'],
-      description: 'Specializing in passive tagging solutions and low-power sensory tags. Let me know if you need design assistance or components reviews for your RFID capstone projects!',
-      imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300'
-    },
-    {
-      id: 'n3',
-      name: 'Julian Vance',
-      age: 34,
-      role: 'University Talents Acquisition Lead',
-      university: 'Würth Elektronik HR',
-      tags: ['Recruiter Specialist', 'Careers Lead', 'Industry Coach'],
-      skills: ['Talent Sourcing', 'Interview Prep', 'Career Pathing'],
-      description: 'Looking to identify the brightest minds for our European innovation clinics. Chat with me regarding internships, working students spots, or master thesis topics!',
-      imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300'
-    }
-  ]);
+  // Network Stack / Tinder Swipe Cards — dynamically ranked by project match
+  const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([]);
+
+  // Re-generate the queue whenever projects or profile skills change
+  useEffect(() => {
+    const queue = db.getInterestedEmployees(
+      projects.length > 0 ? projects : [
+        // Fallback projects if none loaded yet (ensures queue is never empty on first load)
+        {
+          id: 'p_fallback',
+          title: 'Smart Inventory Tracker',
+          description: 'An automated IoT inventory solution utilizing Würth RFID technology.',
+          tech: ['Python', 'MQTT', 'React'],
+          components: ['RFID Tags - W-102', 'WSEN-TIDS Sensor'],
+          imageUrl: '',
+          featured: true,
+          codeUrl: '',
+          demoUrl: ''
+        }
+      ],
+      profile.skills
+    );
+    setNetworkQueue(queue);
+  }, [projects, profile.skills]);
+
 
   // Active Chats State with LocalStorage sync
   const [connections, setConnections] = useState<ConnectionChat[]>(() => {

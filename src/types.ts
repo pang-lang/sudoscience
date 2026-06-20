@@ -92,6 +92,12 @@ export interface NetworkProfile {
   skills: string[];
   description: string;
   imageUrl: string;
+  /** Why this employee was matched to the student */
+  matchReason?: string;
+  /** The project name this employee's expertise aligns with */
+  interestedInProject?: string;
+  /** Computed match score (0–100) based on project alignment */
+  projectMatchScore?: number;
 }
 
 export interface ConnectionChat {
