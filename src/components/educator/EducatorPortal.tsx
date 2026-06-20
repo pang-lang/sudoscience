@@ -12,6 +12,7 @@ import {
 import ContentTab from './ContentTab';
 import InsightsTab from './InsightsTab';
 import CollaborateTab from './CollaborateTab';
+import { supabase } from '../../lib/supabase';
 
 interface EducatorPortalProps {
   onLogout: () => void;
@@ -21,25 +22,63 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
   // ---- DATA ENGINE INITIALIZATION ----
   
   // Dynamic material recordings listed
-  const [materials, setMaterials] = useState<LearningMaterial[]>([
-    { id: 'm1', fileName: 'Q3_Engineering_Principles_Deck.pptx', type: 'Slide', durationOrSize: '4.8 MB', uploadDate: 'Oct 02, 2024', views: 84, downloads: 42 },
-    { id: 'm2', fileName: 'Advanced_Thermodynamics_Lec1.mp4', type: 'Video', durationOrSize: '1h 24m', uploadDate: 'Sep 28, 2024', views: 112, downloads: 55 },
-    { id: 'm3', fileName: 'Inductor_Design_Formulas.pdf', type: 'Document', durationOrSize: '1.2 MB', uploadDate: 'Sep 15, 2024', views: 254, downloads: 180 }
-  ]);
+  const [materials, setMaterials] = useState<LearningMaterial[]>([]);
 
   // Student list tracked
-  const [students, setStudents] = useState<StudentPerformance[]>([
-    { id: 's1', name: 'Elena Rostova', course: 'ENG-101', attendance: 98, resourcesAccessed: 24, questionsAsked: 12, flagged: false },
-    { id: 's2', name: 'Marcus Chen', course: 'ENG-101', attendance: 95, resourcesAccessed: 18, questionsAsked: 8, flagged: false },
-    { id: 's3', name: 'Sarah Jenkins', course: 'ENG-102', attendance: 100, resourcesAccessed: 31, questionsAsked: 22, flagged: false },
-    { id: 's4', name: 'David Miller', course: 'ENG-101', attendance: 75, resourcesAccessed: 12, questionsAsked: 2, flagged: true }
-  ]);
+  const [students, setStudents] = useState<StudentPerformance[]>([]);
 
   // Capstones listed
-  const [capstones, setCapstones] = useState<CapstoneProject[]>([
-    { id: 'cp1', title: 'Sustainable Fastening Solutions', category: 'Engineering', description: 'Innovative screw-threaded design for quick disassembly and metal recycling in secondary consumer electronics casings.', teamCount: 4, sharedWithWE: false },
-    { id: 'cp2', title: 'Automated Warehouse Logistics Router', category: 'Logistics', description: 'Autonomous small-footprint drone coordination algorithm utilizing passive RFID tag tracking to minimize routing overhead.', teamCount: 3, sharedWithWE: true }
-  ]);
+  const [capstones, setCapstones] = useState<CapstoneProject[]>([]);
+
+  // Fetch initial data from Supabase
+  React.useEffect(() => {
+    async function loadData() {
+      // Fetch Learning Materials
+      const { data: matData } = await supabase.from('learning_materials').select('*');
+      if (matData && matData.length > 0) {
+        setMaterials(matData.map((m: any) => ({
+          ...m,
+          fileName: m.file_name,
+          durationOrSize: m.duration_or_size,
+          uploadDate: m.upload_date
+        })));
+      } else {
+        setMaterials([
+          { id: 'm1', fileName: 'Q3_Engineering_Principles_Deck.pptx', type: 'Slide', durationOrSize: '4.8 MB', uploadDate: 'Oct 02, 2024', views: 84, downloads: 42 }
+        ]);
+      }
+
+      // Fetch Students
+      const { data: stuData } = await supabase.from('student_performances').select('*');
+      if (stuData && stuData.length > 0) {
+        setStudents(stuData.map((s: any) => ({
+          ...s,
+          resourcesAccessed: s.resources_accessed,
+          questionsAsked: s.questions_asked
+        })));
+      } else {
+        setStudents([
+          { id: 's1', name: 'Elena Rostova', course: 'ENG-101', attendance: 98, resourcesAccessed: 24, questionsAsked: 12, flagged: false },
+          { id: 's4', name: 'David Miller', course: 'ENG-101', attendance: 75, resourcesAccessed: 12, questionsAsked: 2, flagged: true }
+        ]);
+      }
+
+      // Fetch Capstones
+      const { data: capData } = await supabase.from('capstone_projects').select('*');
+      if (capData && capData.length > 0) {
+        setCapstones(capData.map((c: any) => ({
+          ...c,
+          teamCount: c.team_count,
+          sharedWithWE: c.shared_with_we
+        })));
+      } else {
+        setCapstones([
+          { id: 'cp1', title: 'Sustainable Fastening Solutions', category: 'Engineering', description: 'Innovative screw-threaded design...', teamCount: 4, sharedWithWE: false }
+        ]);
+      }
+    }
+    loadData();
+  }, []);
 
   // View tabs
   const [currentTab, setCurrentTab] = useState<'content' | 'insights' | 'collaborate'>('content');

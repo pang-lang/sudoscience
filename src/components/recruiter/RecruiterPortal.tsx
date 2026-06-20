@@ -14,6 +14,7 @@ import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
+import { supabase } from '../../lib/supabase';
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -22,10 +23,8 @@ interface RecruiterPortalProps {
 export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // ---- DATA ENGINE INITIALIZATION FROM UNIFIED DB ----
 
-  // Candidates State loaded from unified DB
-  const [candidates, setCandidates] = useState<Candidate[]>(() => {
-    return db.getCandidates();
-  });
+  // Candidates State
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   // Coffee Chat Invites state with LocalStorage sync
   const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
@@ -70,10 +69,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     localStorage.setItem('we_connect_manager_profile', JSON.stringify(managerProfile));
   }, [managerProfile]);
 
-  // Posted Job Postings loaded from DB
-  const [postings, setPostings] = useState<PostedOpportunity[]>(() => {
-    return db.getRecruiterPostings();
-  });
+  // Posted Job Postings
+  const [postings, setPostings] = useState<PostedOpportunity[]>([]);
 
   // Global CV Modal State
   const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Candidate | null>(null);
@@ -88,6 +85,58 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     setMatchThreshold(val);
     localStorage.setItem('we_connect_match_threshold', val.toString());
   };
+
+  // Fetch initial data from Supabase & Local DB bootstrap
+  useEffect(() => {
+    async function loadData() {
+      // 1. Fetch Candidates from Supabase
+      const { data: candidatesData } = await supabase.from('candidates').select('*');
+      if (candidatesData && candidatesData.length > 0) {
+        const mappedCandidates = candidatesData.map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          university: c.university,
+          skills: c.skills || [],
+          score: c.score || c.engagementScore || 85,
+          stage: c.stage || 'Talent Pool',
+          avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+          saved: c.saved || false
+        }));
+        
+        // Save to our local unified DB first
+        db.saveCandidates(mappedCandidates);
+      }
+      
+      // Load candidates from db.ts to preserve local sync (e.g. Sarah Jenkins' visa stamps & updated score)
+      setCandidates(db.getCandidates());
+
+      // 2. Fetch Postings from Supabase
+      const { data: jobsData } = await supabase.from('opportunities').select('*');
+      if (jobsData && jobsData.length > 0) {
+        const mappedJobs = jobsData.map((o: any) => {
+          const existing = db.getJobs().find(old => old.id === o.id);
+          return {
+            id: o.id,
+            title: o.title,
+            company: o.company || 'Würth Elektronik',
+            location: o.location || 'Munich, Germany',
+            type: o.type,
+            starts: o.starts || 'ASAP',
+            deadline: o.deadline || 'Rolling',
+            countdown: o.countdown || 'Apply Early',
+            description: o.description || '',
+            logoColor: o.logo_color || o.logoColor || 'from-red-600 to-slate-900',
+            requiredSkills: existing ? existing.requiredSkills : (o.required_skills || ['Project Management']),
+            status: o.status || 'Active',
+            applicantsCount: o.applicants_count || o.applicantsCount || 0
+          };
+        });
+        db.saveJobs(mappedJobs);
+      }
+      setPostings(db.getRecruiterPostings());
+    }
+    loadData();
+  }, []);
 
   // Window navigation
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities'>('dashboard');
@@ -149,24 +198,44 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     });
   };
 
-  // Stage transition callback
-  const transitionCandidateStage = (id: string, dir: 'next' | 'prev') => {
+  // Stage transition callback with Supabase update
+  const transitionCandidateStage = async (id: string, dir: 'next' | 'prev') => {
     const stages: Array<Candidate['stage']> = ['Talent Pool', 'Saved', 'Recruiter Review', 'Interview Scheduled'];
-    setCandidates(prev => {
-      const next = prev.map(c => {
-        if (c.id === id) {
-          const curIdx = stages.indexOf(c.stage);
-          let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
-          if (nextIdx >= 0 && nextIdx < stages.length) {
-            showToast(`Advanced ${c.name} to "${stages[nextIdx]}"`);
-            return { ...c, stage: stages[nextIdx] };
-          }
-        }
-        return c;
+    
+    const candidate = candidates.find(c => c.id === id);
+    if (!candidate) return;
+    
+    const curIdx = stages.indexOf(candidate.stage);
+    let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
+    
+    if (nextIdx >= 0 && nextIdx < stages.length) {
+      const nextStage = stages[nextIdx];
+      
+      // Optimistic update
+      setCandidates(prev => {
+        const next = prev.map(c => c.id === id ? { ...c, stage: nextStage } : c);
+        db.saveCandidates(next);
+        return next;
       });
-      db.saveCandidates(next);
-      return next;
-    });
+      showToast(`Advanced ${candidate.name} to "${nextStage}"`);
+      
+      // Supabase persist
+      const { error } = await supabase
+        .from('candidates')
+        .update({ stage: nextStage })
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Error updating stage in Supabase:', error);
+        showToast(`Failed to save stage for ${candidate.name}`);
+        // Revert on error
+        setCandidates(prev => {
+          const next = prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c);
+          db.saveCandidates(next);
+          return next;
+        });
+      }
+    }
   };
 
   // --- CANDIDATE MODAL HELPERS ---
@@ -225,6 +294,39 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       }
       return inv;
     }));
+=======
+  // Drag simulation / instant stage update helper with Supabase persistence
+  const transitionCandidateStage = async (id: string, dir: 'next' | 'prev') => {
+    const stages: Array<Candidate['stage']> = ['Talent Pool', 'Saved', 'Recruiter Review', 'Interview Scheduled'];
+    
+    // Find the candidate
+    const candidate = candidates.find(c => c.id === id);
+    if (!candidate) return;
+    
+    const curIdx = stages.indexOf(candidate.stage);
+    let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
+    
+    if (nextIdx >= 0 && nextIdx < stages.length) {
+      const nextStage = stages[nextIdx];
+      
+      // Optimistic UI Update
+      setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage: nextStage } : c));
+      showToast(`Advanced ${candidate.name} to "${nextStage}"`);
+      
+      // Persist to Supabase
+      const { error } = await supabase
+        .from('candidates')
+        .update({ stage: nextStage })
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Error updating stage:', error);
+        showToast(`Failed to save stage for ${candidate.name}`);
+        // Revert on error
+        setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c));
+      }
+    }
+>>>>>>> origin/main
   };
 
   const handleSendOffer = (candName: string) => {

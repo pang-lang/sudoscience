@@ -23,6 +23,7 @@ import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
 import CoffeeChatTab from './CoffeeChatTab';
+import { supabase } from '../../lib/supabase';
 
 interface StudentPortalProps {
   onLogout: () => void;
@@ -64,81 +65,10 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   }, [profile]);
 
   // Projects State
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 'p1',
-      title: 'Smart Inventory Tracker',
-      description: 'An automated IoT inventory solution utilizing Würth RFID technology for sub-millimeter position precision and material optimization.',
-      tech: ['Python', 'MQTT', 'React'],
-      components: ['RFID Tags - W-102', 'WSEN-TIDS Sensor'],
-      imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400',
-      featured: true,
-      codeUrl: 'https://github.com/example/smart-rfid',
-      demoUrl: 'https://example.com/demo-rfid'
-    },
-    {
-      id: 'p2',
-      title: 'Automated Quality Control',
-      description: 'Computer vision hardware inspection platform designed to inspect high-density PCB assemblies for physical defects prior to reflow.',
-      tech: ['OpenCV', 'C++', 'TensorFlow'],
-      components: ['Magi3C Power Module', 'WSEN-EVAL Board'],
-      imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400',
-      featured: false,
-      codeUrl: 'https://github.com/example/cv-qc',
-      demoUrl: 'https://example.com/demo-qc'
-    }
-  ]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Masterclasses synced with DB registrations
-  const [events, setEvents] = useState<MasterclassEvent[]>(() => {
-    const defaultEvents: MasterclassEvent[] = [
-      {
-        id: 'e1',
-        title: 'Advanced Systems Architecture: Scaling for the Future',
-        speaker: 'Dr. Lukas Miller',
-        speakerTitle: 'WE Chief Architect',
-        location: 'Innovation Hub, Berlin',
-        date: 'Oct 15, 2024',
-        time: '2:00 PM CEST',
-        tag: 'Engineering',
-        attendeesCount: 42,
-        registered: false,
-        waitlisted: false
-      },
-      {
-        id: 'e2',
-        title: 'Navigating Corporate Dynamics as a Junior Engineer',
-        speaker: 'Evelyn Vance',
-        speakerTitle: 'Vice President HR',
-        location: 'Virtual Webinar',
-        date: 'Oct 18, 2024',
-        time: '4:00 PM CEST',
-        tag: 'Leadership',
-        attendeesCount: 156,
-        registered: false,
-        waitlisted: false
-      },
-      {
-        id: 'e3',
-        title: 'Design-First Power Optimizations with RedExpert Tools',
-        speaker: 'Marcus Schmidt',
-        speakerTitle: 'Principal FAE EMEA',
-        location: 'Campus West, Lab 3',
-        date: 'Nov 02, 2024',
-        time: '10:00 AM CET',
-        tag: 'Hardware',
-        attendeesCount: 28,
-        registered: false,
-        waitlisted: false
-      }
-    ];
-
-    const regs = db.getRegistrations();
-    return defaultEvents.map(e => ({
-      ...e,
-      registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
-    }));
-  });
+  const [events, setEvents] = useState<MasterclassEvent[]>([]);
 
   // Download Recordings / Docs
   const [materials] = useState<LearningMaterial[]>([
@@ -148,9 +78,103 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   ]);
 
   // Careers / Opportunities loaded from unified DB
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(() => {
-    return db.getStudentOpportunities();
-  });
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+
+  // Supabase Data Fetcher & Local DB Sync
+  useEffect(() => {
+    async function loadData() {
+      // 1. Load Projects
+      const { data: projData } = await supabase.from('projects').select('*');
+      if (projData && projData.length > 0) {
+        setProjects(projData.map((p: any) => ({
+          ...p,
+          imageUrl: p.image_url,
+          codeUrl: p.code_url,
+          demoUrl: p.demo_url
+        })));
+      } else {
+        setProjects([
+          {
+            id: 'p1',
+            title: 'Smart Inventory Tracker',
+            description: 'An automated IoT inventory solution utilizing Würth RFID technology for sub-millimeter position precision and material optimization.',
+            tech: ['Python', 'MQTT', 'React'],
+            components: ['RFID Tags - W-102', 'WSEN-TIDS Sensor'],
+            imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400',
+            featured: true,
+            codeUrl: 'https://github.com/example/smart-rfid',
+            demoUrl: 'https://example.com/demo-rfid'
+          },
+          {
+            id: 'p2',
+            title: 'Automated Quality Control',
+            description: 'Computer vision hardware inspection platform designed to inspect high-density PCB assemblies for physical defects prior to reflow.',
+            tech: ['OpenCV', 'C++', 'TensorFlow'],
+            components: ['Magi3C Power Module', 'WSEN-EVAL Board'],
+            imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400',
+            featured: false,
+            codeUrl: 'https://github.com/example/cv-qc',
+            demoUrl: 'https://example.com/demo-qc'
+          }
+        ]);
+      }
+
+      // 2. Load Events
+      const { data: evtData } = await supabase.from('masterclass_events').select('*');
+      const regs = db.getRegistrations();
+      if (evtData && evtData.length > 0) {
+        setEvents(evtData.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          speaker: e.speaker,
+          speakerTitle: e.speaker_title || e.speakerTitle || '',
+          location: e.location,
+          date: e.date,
+          time: e.time,
+          tag: e.tag,
+          attendeesCount: e.attendees_count || e.attendeesCount || 0,
+          registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id),
+          waitlisted: false
+        })));
+      } else {
+        const defaultEvents: MasterclassEvent[] = [
+          { id: 'e1', title: 'Advanced Systems Architecture: Scaling for the Future', speaker: 'Dr. Lukas Miller', speakerTitle: 'WE Chief Architect', location: 'Innovation Hub, Berlin', date: 'Oct 15, 2024', time: '2:00 PM CEST', tag: 'Engineering', attendeesCount: 42, registered: false, waitlisted: false },
+          { id: 'e2', title: 'Navigating Corporate Dynamics as a Junior Engineer', speaker: 'Evelyn Vance', speakerTitle: 'Vice President HR', location: 'Virtual Webinar', date: 'Oct 18, 2024', time: '4:00 PM CEST', tag: 'Leadership', attendeesCount: 156, registered: false, waitlisted: false },
+          { id: 'e3', title: 'Design-First Power Optimizations with RedExpert Tools', speaker: 'Marcus Schmidt', speakerTitle: 'Principal FAE EMEA', location: 'Campus West, Lab 3', date: 'Nov 02, 2024', time: '10:00 AM CET', tag: 'Hardware', attendeesCount: 28, registered: false, waitlisted: false }
+        ];
+        setEvents(defaultEvents.map(e => ({
+          ...e,
+          registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
+        })));
+      }
+
+      // 3. Load Opportunities
+      const { data: oppData } = await supabase.from('opportunities').select('*');
+      if (oppData && oppData.length > 0) {
+        const mappedJobs = oppData.map((o: any) => {
+          const existing = db.getJobs().find(old => old.id === o.id);
+          return {
+            id: o.id,
+            title: o.title,
+            company: o.company || 'Würth Elektronik',
+            location: o.location || 'Munich, Germany',
+            type: o.type,
+            starts: o.starts || 'ASAP',
+            deadline: o.deadline || 'Rolling',
+            countdown: o.countdown || 'Apply Early',
+            description: o.description || '',
+            logoColor: o.logo_color || o.logoColor || 'from-red-600 to-slate-900',
+            requiredSkills: existing ? existing.requiredSkills : (o.required_skills || ['Project Management']),
+            status: o.status || 'Active',
+            applicantsCount: o.applicants_count || o.applicantsCount || 0
+          };
+        });
+        db.saveJobs(mappedJobs);
+      }
+      setOpportunities(db.getStudentOpportunities());
+    }
+    loadData();
+  }, [profile.name]);
 
   // Interceptor for setOpportunities to sync with DB
   const handleSetOpportunities: React.Dispatch<React.SetStateAction<Opportunity[]>> = (value) => {
