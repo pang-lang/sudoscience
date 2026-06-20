@@ -34,34 +34,59 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
   React.useEffect(() => {
     async function loadData() {
       // Fetch Learning Materials
-      const { data: matData } = await supabase.from('learning_materials').select('*');
-      if (matData) {
-        setMaterials(matData.map((m: any) => ({
-          ...m,
-          fileName: m.file_name,
-          durationOrSize: m.duration_or_size,
-          uploadDate: m.upload_date
-        })));
+      try {
+        const { data: matData, error } = await supabase.from('learning_materials').select('*');
+        if (error) throw error;
+        if (matData) {
+          setMaterials(matData.map((m: any) => ({
+            ...m,
+            fileName: m.file_name,
+            durationOrSize: m.duration_or_size,
+            uploadDate: m.upload_date
+          })));
+        }
+      } catch (e) {
+        console.warn('Could not fetch learning materials from Supabase, using mock fallback:', e);
+        setMaterials([
+          { id: 'm1', fileName: 'Q3_Engineering_Principles_Deck.pptx', type: 'Slide', durationOrSize: '4.8 MB', uploadDate: 'Oct 02, 2024', views: 84, downloads: 42 }
+        ]);
       }
 
       // Fetch Students
-      const { data: stuData } = await supabase.from('student_performances').select('*');
-      if (stuData) {
-        setStudents(stuData.map((s: any) => ({
-          ...s,
-          resourcesAccessed: s.resources_accessed,
-          questionsAsked: s.questions_asked
-        })));
+      try {
+        const { data: stuData, error } = await supabase.from('student_performances').select('*');
+        if (error) throw error;
+        if (stuData) {
+          setStudents(stuData.map((s: any) => ({
+            ...s,
+            resourcesAccessed: s.resources_accessed,
+            questionsAsked: s.questions_asked
+          })));
+        }
+      } catch (e) {
+        console.warn('Could not fetch student performances from Supabase, using mock fallback:', e);
+        setStudents([
+          { id: 's1', name: 'Elena Rostova', course: 'ENG-101', attendance: 98, resourcesAccessed: 24, questionsAsked: 12, flagged: false },
+          { id: 's4', name: 'David Miller', course: 'ENG-101', attendance: 75, resourcesAccessed: 12, questionsAsked: 2, flagged: true }
+        ]);
       }
 
       // Fetch Capstones
-      const { data: capData } = await supabase.from('capstone_projects').select('*');
-      if (capData) {
-        setCapstones(capData.map((c: any) => ({
-          ...c,
-          teamCount: c.team_count,
-          sharedWithWE: c.shared_with_we
-        })));
+      try {
+        const { data: capData, error } = await supabase.from('capstone_projects').select('*');
+        if (error) throw error;
+        if (capData) {
+          setCapstones(capData.map((c: any) => ({
+            ...c,
+            teamCount: c.team_count,
+            sharedWithWE: c.shared_with_we
+          })));
+        }
+      } catch (e) {
+        console.warn('Could not fetch capstone projects from Supabase, using mock fallback:', e);
+        setCapstones([
+          { id: 'cp1', title: 'Sustainable Fastening Solutions', category: 'Engineering', description: 'Innovative screw-threaded design with composite elements yielding high stress resilience.', teamCount: 4, sharedWithWE: false }
+        ]);
       }
     }
     loadData();

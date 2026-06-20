@@ -11,9 +11,10 @@ import {
   VisaStamp,
   CoffeeChatInvite
 } from '../../types';
-import { 
+import {
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee
 } from 'lucide-react';
+import { db } from '../../utils/db';
 
 import PassportTab from './PassportTab';
 import PortfolioTab from './PortfolioTab';
@@ -29,7 +30,7 @@ interface StudentPortalProps {
 
 export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // ---- DATA STATE INITIALIZATION ----
-  
+
   // Profile State with LocalStorage sync
   const [profile, setProfile] = useState<StudentProfile>(() => {
     const saved = localStorage.getItem('we_connect_student_profile');
@@ -59,7 +60,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // Projects State
   const [projects, setProjects] = useState<Project[]>([]);
 
-  // Masterclasses
+  // Masterclasses synced with DB registrations
   const [events, setEvents] = useState<MasterclassEvent[]>([]);
 
   // Download Recordings / Docs
@@ -68,7 +69,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // Careers / Opportunities
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
 
-  // Supabase Data Fetcher
+  // Supabase Data Fetcher & Local DB Sync
   useEffect(() => {
     async function loadData() {
       // 1. Load Student Profile
@@ -100,10 +101,10 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       // 3. Load Events
       const { data: evtData } = await supabase.from('masterclass_events').select('*');
       if (evtData) {
+        const regs = db.getRegistrations();
         setEvents(evtData.map((e: any) => ({
           ...e,
-          speakerTitle: e.speaker_title,
-          attendeesCount: e.attendees_count
+          registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
         })));
       }
 
@@ -206,7 +207,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
 
   // ---- APP WINDOW STATE RENDERING ----
   const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
-  
+
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -426,12 +427,12 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           )}
 
           {currentTab === 'network' && (
-            <NetworkTab 
-              networkQueue={networkQueue} 
-              setNetworkQueue={setNetworkQueue} 
-              connections={connections} 
-              setConnections={setConnections} 
-              showToast={showToast} 
+            <NetworkTab
+              networkQueue={networkQueue}
+              setNetworkQueue={setNetworkQueue}
+              connections={connections}
+              setConnections={setConnections}
+              showToast={showToast}
               invites={invites}
               setInvites={setInvites}
             />
