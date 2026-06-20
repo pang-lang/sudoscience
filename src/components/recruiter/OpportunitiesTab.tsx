@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PostedOpportunity } from '../../types';
 import { Plus, Trash2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface OpportunitiesTabProps {
   postings: PostedOpportunity[];
@@ -76,7 +77,7 @@ export default function OpportunitiesTab({ postings, setPostings, showToast }: O
             </div>
 
             <button 
-              onClick={() => {
+              onClick={async () => {
                 if (!formTitle.trim()) {
                   showToast("Please provide a valid placement title.");
                   return;
@@ -98,7 +99,32 @@ export default function OpportunitiesTab({ postings, setPostings, showToast }: O
                   status: 'Active',
                   requiredSkills: skillsArr
                 };
+                
+                // Optimistic UI Update
                 setPostings(prev => [newPost, ...prev]);
+                
+                // Persist to Supabase
+                const { error } = await supabase.from('opportunities').insert({
+                  id: newPost.id,
+                  title: newPost.title,
+                  company: 'Würth Elektronik', // Default fallback
+                  location: 'Remote / Hybrid', // Default fallback
+                  type: newPost.type,
+                  starts: 'ASAP',
+                  deadline: newPost.deadline,
+                  countdown: 'Actively Hiring',
+                  description: 'Opportunity listed by recruiter portal.',
+                  logo_color: 'bg-red-600'
+                });
+
+                if (error) {
+                  console.error("Error inserting opportunity:", error);
+                  showToast("Failed to save to database. Check console.");
+                  // Revert optimistic update
+                  setPostings(prev => prev.filter(p => p.id !== newPost.id));
+                  return;
+                }
+
                 showToast(`Successfully published: "${newPost.title}"`);
                 
                 // reset
@@ -176,8 +202,18 @@ export default function OpportunitiesTab({ postings, setPostings, showToast }: O
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
+                          const previousPostings = [...postings];
                           setPostings(prev => prev.filter(p => p.id !== post.id));
+                          
+                          const { error } = await supabase.from('opportunities').delete().eq('id', post.id);
+                          if (error) {
+                            console.error("Error deleting opportunity:", error);
+                            showToast("Failed to delete from database.");
+                            setPostings(previousPostings); // Revert
+                            return;
+                          }
+                          
                           showToast("Opportunity archiving simulation successful.");
                         }}
                         className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50 transition cursor-pointer"

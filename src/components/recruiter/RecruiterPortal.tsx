@@ -133,7 +133,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
             saved: c.saved || false
           }));
-          
           // Ensure c_sarah_j (Sarah Jenkins) is always preserved
           const hasSarah = mappedCandidates.some((c: any) => c.id === 'c_sarah_j');
           if (!hasSarah) {
@@ -152,14 +151,13 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             };
             mappedCandidates.push(sarahDefault);
           }
-          
           // Save to our local unified DB first
           db.saveCandidates(mappedCandidates);
         }
       } catch (e) {
         console.warn('Could not fetch candidates from Supabase, using local db cache:', e);
       }
-      
+
       // Load candidates from db.ts to preserve local sync (e.g. Sarah Jenkins' visa stamps & updated score)
       setCandidates(db.getCandidates());
 
@@ -302,16 +300,16 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // Stage transition callback with Supabase update
   const transitionCandidateStage = async (id: string, dir: 'next' | 'prev') => {
     const stages: Array<Candidate['stage']> = ['Talent Pool', 'Saved', 'Recruiter Review', 'Interview Scheduled'];
-    
+
     const candidate = candidates.find(c => c.id === id);
     if (!candidate) return;
-    
+
     const curIdx = stages.indexOf(candidate.stage);
     let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
-    
+
     if (nextIdx >= 0 && nextIdx < stages.length) {
       const nextStage = stages[nextIdx];
-      
+
       // Optimistic update
       setCandidates(prev => {
         const next = prev.map(c => c.id === id ? { ...c, stage: nextStage } : c);
@@ -319,14 +317,14 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         return next;
       });
       showToast(`Advanced ${candidate.name} to "${nextStage}"`);
-      
+
       // Supabase persist with try-catch fallback
       try {
         const { error } = await supabase
           .from('candidates')
           .update({ stage: nextStage })
           .eq('id', id);
-          
+
         if (error) {
           console.error('Error updating stage in Supabase:', error);
           showToast(`Failed to save stage for ${candidate.name}`);
@@ -424,7 +422,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     return `Candidate #${initials}${cand.score}`;
   };
 
-  const activeInvite = selectedCandidateForModal 
+  const activeInvite = selectedCandidateForModal
     ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
     : null;
 
@@ -432,7 +430,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   const isAnonymized = false;
 
   return (
-    <div id="recruiter-portal-root" className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
+    <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
 
       {/* Toast Overlay */}
       <AnimatePresence>
@@ -585,7 +583,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         {/* --- MAIN CONTENT REGIONS --- */}
         <div className="p-8 flex-1">
           {currentTab === 'dashboard' && (
-            <DashboardTab 
+            <DashboardTab
               candidates={candidates}
               invites={invites}
               onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
@@ -636,7 +634,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       <AnimatePresence>
         {selectedCandidateForModal && (
           <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
@@ -645,7 +643,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               {/* Top Passport Style cover */}
               <div className="bg-slate-900 text-white px-6 py-4 flex justify-between items-center border-b border-slate-800 font-mono">
                 <span className="text-[10px] tracking-widest font-bold text-slate-400">EUROPEAN INDUSTRY PASSPORT</span>
-                <button 
+                <button
                   onClick={() => setSelectedCandidateForModal(null)}
                   className="w-6 h-6 rounded-full bg-slate-850 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center cursor-pointer"
                 >
@@ -670,11 +668,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                 {/* Photo */}
                 <div className="flex flex-col items-center gap-2 shrink-0">
                   <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-slate-200 flex items-center justify-center relative">
-                    <img 
-                      className={`w-full h-full object-cover transition duration-300 ${
-                        isAnonymized ? 'filter blur-md grayscale blur-xs' : 'grayscale-0'
-                      }`}
-                      src={selectedCandidateForModal.avatarUrl} 
+                    <img
+                      className={`w-full h-full object-cover transition duration-300 ${isAnonymized ? 'filter blur-md grayscale blur-xs' : 'grayscale-0'
+                        }`}
+                      src={selectedCandidateForModal.avatarUrl}
                       alt="Candidate Portrait"
                       referrerPolicy="no-referrer"
                     />
@@ -694,7 +691,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                   <div>
                     <span className="text-[10px] text-slate-400 uppercase tracking-widest block">Surname / First Name</span>
                     <span className="text-sm font-semibold text-slate-950 font-sans tracking-tight block mt-0.5 truncate">
-                      {isAnonymized 
+                      {isAnonymized
                         ? getMaskedName(selectedCandidateForModal)
                         : `${selectedCandidateForModal.name.split(' ')[1]?.toUpperCase() || 'CANDIDATE'}, ${selectedCandidateForModal.name.split(' ')[0]}`
                       }
@@ -750,6 +747,78 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                       </span>
                     );
                   })}
+                </div>
+
+                {/* Invitation / Offer Dispatch button */}
+                <div className="mt-6 flex flex-col gap-3">
+                  {selectedCandidateForModal.score >= matchThreshold ? (
+                    <div>
+                      {!activeInvite ? (
+                        <button
+                          onClick={() => {
+                            handleSendInvite(selectedCandidateForModal);
+                            setSelectedCandidateForModal(null);
+                          }}
+                          className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl transition text-center cursor-pointer flex items-center justify-center gap-1.5 shadow shadow-red-500/20"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          Invite to Coffee Chat
+                        </button>
+                      ) : activeInvite.status === 'pending' ? (
+                        <button
+                          disabled
+                          className="w-full py-2.5 bg-slate-200 text-slate-500 font-semibold text-xs rounded-xl text-center cursor-not-allowed"
+                        >
+                          Invite Sent (Pending Student Response)
+                        </button>
+                      ) : activeInvite.status === 'accepted' ? (
+                        <div className="space-y-2">
+                          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] text-emerald-800 font-mono flex items-center gap-2">
+                            <Check className="w-4 h-4 text-emerald-500" />
+                            <span>Connected & Match Active</span>
+                          </div>
+
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleToggleManagerShare(activeInvite.id)}
+                              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${activeInvite.managerSharedProfile
+                                  ? 'bg-slate-900 text-white border-transparent'
+                                  : 'bg-white text-slate-700 border-slate-250 hover:bg-slate-50'
+                                }`}
+                            >
+                              {activeInvite.managerSharedProfile ? 'Revoke Profile Share' : 'Share Contact Details'}
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                handleSendOffer(isProfileShared ? selectedCandidateForModal.name : getMaskedName(selectedCandidateForModal));
+                                setSelectedCandidateForModal(null);
+                              }}
+                              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${isProfileShared
+                                  ? 'bg-red-600 hover:bg-red-700 text-white shadow shadow-red-500/20'
+                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                                }`}
+                              disabled={!isProfileShared}
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              Send Intern Offer
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-slate-100 p-3 rounded-xl text-center text-xs font-semibold text-slate-500">
+                          Invite Declined by Student
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="bg-slate-100 p-3.5 rounded-2xl flex items-center gap-2 border border-slate-200 text-slate-500">
+                      <Lock className="w-4 h-4 text-slate-400 shrink-0" />
+                      <span className="text-[11px] font-mono leading-tight">
+                        Locked: Candidate match score ({selectedCandidateForModal.score}) must exceed the threshold ({matchThreshold}) to enable coffee chat invitations.
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Projects Section */}

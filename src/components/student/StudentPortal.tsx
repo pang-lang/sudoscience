@@ -12,7 +12,8 @@ import {
   CoffeeChatInvite
 } from '../../types';
 import { 
-  Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee
+  Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee,
+  GraduationCap
 } from 'lucide-react';
 import { db } from '../../utils/db';
 
@@ -23,14 +24,16 @@ import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
 import { supabase } from '../../lib/supabase';
+import CoffeeChatTab from './CoffeeChatTab';
+import PublicPortal from '../public/PublicPortal';
 
 interface StudentPortalProps {
   onLogout: () => void;
 }
 
 export default function StudentPortal({ onLogout }: StudentPortalProps) {
-  // ---- MOCK DATA INITIALIZATION ----
-  
+  // ---- DATA STATE INITIALIZATION ----
+
   // Profile State with LocalStorage sync
   const [profile, setProfile] = useState<StudentProfile>(() => {
     const saved = localStorage.getItem('we_connect_student_profile');
@@ -42,20 +45,14 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       }
     }
     return {
-      name: 'Sarah Jenkins',
-      institution: 'Munich University of Applied Sciences',
-      degree: 'M.Sc. Mechanical Engineering',
-      engagementScore: 85,
-      status: 'Industry Ready',
-      skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'],
-      certifications: [
-        { name: 'Certified SolidWorks Associate', issuer: 'Dassault Systèmes', date: 'Jan 2023' },
-        { name: 'Lean Six Sigma Yellow Belt', issuer: 'WE Academy', date: 'Nov 2022' }
-      ],
-      stamps: [
-        { id: 'v1', name: "Tech Summit '23", date: 'Oct 2023', icon: '🚀' },
-        { id: 'v2', name: 'Career Fair', date: 'Apr 24', icon: '💼' }
-      ]
+      name: '',
+      institution: '',
+      degree: '',
+      engagementScore: 0,
+      status: 'In Training',
+      skills: [],
+      certifications: [],
+      stamps: []
     };
   });
 
@@ -70,86 +67,45 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   const [events, setEvents] = useState<MasterclassEvent[]>([]);
 
   // Download Recordings / Docs
-  const [materials] = useState<LearningMaterial[]>([
-    { id: 'm1', fileName: 'Intro_to_RF_Design_CrashCourse.mp4', type: 'Video', durationOrSize: '1h 45m', uploadDate: 'Oct 10, 2024', views: 320, downloads: 145 },
-    { id: 'm2', fileName: 'Q3_Electromagnetic_Interference_Deck.pdf', type: 'Slide', durationOrSize: '4.2 MB', uploadDate: 'Oct 08, 2024', views: 512, downloads: 289 },
-    { id: 'm3', fileName: 'Industrial_Sensor_IoT_Boilerplate.zip', type: 'Code', durationOrSize: '12.0 MB', uploadDate: 'Oct 02, 2024', views: 189, downloads: 93 }
-  ]);
+  const [materials, setMaterials] = useState<LearningMaterial[]>([]);
 
-  // Careers / Opportunities loaded from unified DB
+  // Careers / Opportunities
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
 
   // Supabase Data Fetcher & Local DB Sync
   useEffect(() => {
     async function loadData() {
-      // 1. Load Projects
-      try {
-        const { data: projData, error } = await supabase.from('projects').select('*');
-        if (error) throw error;
-        if (projData) {
-          setProjects(projData.map((p: any) => ({
-            ...p,
-            imageUrl: p.image_url,
-            codeUrl: p.code_url,
-            demoUrl: p.demo_url
-          })));
-        }
-      } catch (e) {
-        console.warn('Could not fetch projects from Supabase, using mock fallback:', e);
-        setProjects([
-          {
-            id: 'p1',
-            title: 'Smart Inventory Tracker',
-            description: 'An automated IoT inventory solution utilizing Würth RFID technology for sub-millimeter position precision and material optimization.',
-            tech: ['Python', 'MQTT', 'React'],
-            components: ['RFID Tags - W-102', 'WSEN-TIDS Sensor'],
-            imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400',
-            featured: true,
-            codeUrl: 'https://github.com/example/smart-rfid',
-            demoUrl: 'https://example.com/demo-rfid'
-          },
-          {
-            id: 'p2',
-            title: 'Automated Quality Control',
-            description: 'Computer vision hardware inspection platform designed to inspect high-density PCB assemblies for physical defects prior to reflow.',
-            tech: ['OpenCV', 'C++', 'TensorFlow'],
-            components: ['Magi3C Power Module', 'WSEN-EVAL Board'],
-            imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400',
-            featured: false,
-            codeUrl: 'https://github.com/example/cv-qc',
-            demoUrl: 'https://example.com/demo-qc'
-          }
-        ]);
+      // 1. Load Student Profile
+      const { data: profileData } = await supabase.from('student_profiles').select('*').limit(1);
+      if (profileData && profileData.length > 0) {
+        const p = profileData[0];
+        setProfile(prev => ({
+          ...prev,
+          name: p.name || prev.name,
+          institution: p.institution || prev.institution,
+          degree: p.degree || prev.degree,
+          engagementScore: p.engagement_score ?? prev.engagementScore,
+          status: p.status || prev.status,
+          skills: p.skills || prev.skills,
+        }));
       }
 
-      // 2. Load Events
-      const regs = db.getRegistrations();
-      try {
-        const { data: evtData, error } = await supabase.from('masterclass_events').select('*');
-        if (error) throw error;
-        if (evtData) {
-          setEvents(evtData.map((e: any) => ({
-            id: e.id,
-            title: e.title,
-            speaker: e.speaker,
-            speakerTitle: e.speaker_title || e.speakerTitle || '',
-            location: e.location,
-            date: e.date,
-            time: e.time,
-            tag: e.tag,
-            attendeesCount: e.attendees_count || e.attendeesCount || 0,
-            registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id),
-            waitlisted: false
-          })));
-        }
-      } catch (e) {
-        console.warn('Could not fetch events from Supabase, using mock fallback:', e);
-        const defaultEvents: MasterclassEvent[] = [
-          { id: 'e1', title: 'Advanced Systems Architecture: Scaling for the Future', speaker: 'Dr. Lukas Miller', speakerTitle: 'WE Chief Architect', location: 'Innovation Hub, Berlin', date: 'Oct 15, 2024', time: '2:00 PM CEST', tag: 'Engineering', attendeesCount: 42, registered: false, waitlisted: false },
-          { id: 'e2', title: 'Navigating Corporate Dynamics as a Junior Engineer', speaker: 'Evelyn Vance', speakerTitle: 'Vice President HR', location: 'Virtual Webinar', date: 'Oct 18, 2024', time: '4:00 PM CEST', tag: 'Leadership', attendeesCount: 156, registered: false, waitlisted: false },
-          { id: 'e3', title: 'Design-First Power Optimizations with RedExpert Tools', speaker: 'Marcus Schmidt', speakerTitle: 'Principal FAE EMEA', location: 'Campus West, Lab 3', date: 'Nov 02, 2024', time: '10:00 AM CET', tag: 'Hardware', attendeesCount: 28, registered: false, waitlisted: false }
-        ];
-        setEvents(defaultEvents.map(e => ({
+      // 2. Load Projects
+      const { data: projData } = await supabase.from('projects').select('*');
+      if (projData) {
+        setProjects(projData.map((p: any) => ({
+          ...p,
+          imageUrl: p.image_url,
+          codeUrl: p.code_url,
+          demoUrl: p.demo_url
+        })));
+      }
+
+      // 3. Load Events
+      const { data: evtData } = await supabase.from('masterclass_events').select('*');
+      if (evtData) {
+        const regs = db.getRegistrations();
+        setEvents(evtData.map((e: any) => ({
           ...e,
           registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
         })));
@@ -190,14 +146,34 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             };
           });
           db.saveJobs(mappedJobs);
+          setOpportunities(db.getStudentOpportunities());
         }
       } catch (e) {
         console.warn('Could not fetch opportunities from Supabase, using local db cache:', e);
       }
-      setOpportunities(db.getStudentOpportunities());
+
+      // 4. Load Learning Materials
+      const { data: matData } = await supabase.from('learning_materials').select('*');
+      if (matData) {
+        setMaterials(matData.map((m: any) => ({
+          ...m,
+          fileName: m.file_name,
+          durationOrSize: m.duration_or_size,
+          uploadDate: m.upload_date
+        })));
+      }
+
+      // 5. Load Network Profiles
+      const { data: netData } = await supabase.from('network_profiles').select('*');
+      if (netData) {
+        setNetworkQueue(netData.map((n: any) => ({
+          ...n,
+          imageUrl: n.image_url
+        })));
+      }
     }
     loadData();
-  }, [profile.name]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Interceptor for setOpportunities to sync with DB
   const handleSetOpportunities: React.Dispatch<React.SetStateAction<Opportunity[]>> = (value) => {
@@ -233,61 +209,8 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     });
   };
 
-  // Interceptor for setEvents to write registration back to DB
-  const handleSetEvents: React.Dispatch<React.SetStateAction<MasterclassEvent[]>> = (value) => {
-    setEvents(prev => {
-      const next = typeof value === 'function' ? value(prev) : value;
-      next.forEach(evt => {
-        const old = prev.find(e => e.id === evt.id);
-        if (old && !old.registered && evt.registered) {
-          db.registerForEvent('c_sarah_j', profile.name, evt.id, evt.title);
-          
-          // Re-load updated profile from localstorage since db.registerForEvent updates stamps
-          const updatedProfile = localStorage.getItem('we_connect_student_profile');
-          if (updatedProfile) {
-            try {
-              setProfile(JSON.parse(updatedProfile));
-            } catch (e) {
-              console.error(e);
-            }
-          }
-        }
-      });
-      
-      // Return registrations updated state
-      const regs = db.getRegistrations();
-      return prev.map(e => ({
-        ...e,
-        registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
-      }));
-    });
-  };
-
-  // Network Stack / Tinder Swipe Cards — dynamically ranked by project match
+  // Network Stack / Tinder Swipe Cards
   const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([]);
-
-  // Re-generate the queue whenever projects or profile skills change
-  useEffect(() => {
-    const queue = db.getInterestedEmployees(
-      projects.length > 0 ? projects : [
-        // Fallback projects if none loaded yet (ensures queue is never empty on first load)
-        {
-          id: 'p_fallback',
-          title: 'Smart Inventory Tracker',
-          description: 'An automated IoT inventory solution utilizing Würth RFID technology.',
-          tech: ['Python', 'MQTT', 'React'],
-          components: ['RFID Tags - W-102', 'WSEN-TIDS Sensor'],
-          imageUrl: '',
-          featured: true,
-          codeUrl: '',
-          demoUrl: ''
-        }
-      ],
-      profile.skills
-    );
-    setNetworkQueue(queue);
-  }, [projects, profile.skills]);
-
 
   // Active Chats State with LocalStorage sync
   const [connections, setConnections] = useState<ConnectionChat[]>(() => {
@@ -363,8 +286,8 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   }, []);
 
   // ---- APP WINDOW STATE RENDERING ----
-  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
-  
+  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket' | 'open-hub'>('passport');
+
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -492,6 +415,19 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             </div>
             <span className="text-[9px] font-mono bg-slate-800 text-red-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Valid</span>
           </button>
+
+          <button
+            id="tab-open-hub"
+            onClick={() => setCurrentTab('open-hub')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'open-hub' ? 'bg-slate-800 text-white border-l-4 border-indigo-500' : 'hover:bg-slate-900 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <GraduationCap className="w-4 h-4 text-indigo-400" />
+              <span>Academic Reference</span>
+            </div>
+            <span className="text-[9px] font-mono bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">Ref</span>
+          </button>
         </div>
 
         {/* Global actions at bottom */}
@@ -568,7 +504,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           {currentTab === 'learn' && (
             <LearningTab
               events={events}
-              setEvents={handleSetEvents}
+              setEvents={setEvents}
               materials={materials}
               showToast={showToast}
               setCurrentTab={setCurrentTab}
@@ -578,18 +514,18 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           {currentTab === 'opportunities' && (
             <CareersTab
               opportunities={opportunities}
-              setOpportunities={handleSetOpportunities}
+              setOpportunities={setOpportunities}
               showToast={showToast}
             />
           )}
 
           {currentTab === 'network' && (
-            <NetworkTab 
-              networkQueue={networkQueue} 
-              setNetworkQueue={setNetworkQueue} 
-              connections={connections} 
-              setConnections={setConnections} 
-              showToast={showToast} 
+            <NetworkTab
+              networkQueue={networkQueue}
+              setNetworkQueue={setNetworkQueue}
+              connections={connections}
+              setConnections={setConnections}
+              showToast={showToast}
               invites={invites}
               setInvites={setInvites}
             />
@@ -600,6 +536,10 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             <TicketTab
               showToast={showToast}
             />
+          )}
+
+          {currentTab === 'open-hub' && (
+            <PublicPortal embedded={true} isEducator={false} />
           )}
         </div>
       </main>

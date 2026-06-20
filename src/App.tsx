@@ -5,6 +5,7 @@ import StudentPortal from './components/student/StudentPortal';
 import RecruiterPortal from './components/recruiter/RecruiterPortal';
 import EducatorPortal from './components/educator/EducatorPortal';
 import { supabase } from './lib/supabase';
+import PublicPortal from './components/public/PublicPortal';
 
 interface AuthUser {
   name: string;

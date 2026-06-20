@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { UserRole } from '../../types';
-import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight, LogIn } from 'lucide-react';
+import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight, LogIn, Globe } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface RoleSelectorProps {

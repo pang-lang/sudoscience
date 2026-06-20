@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { NetworkProfile, ConnectionChat, CoffeeChatInvite } from '../../types';
-import { 
+import {
   X, Heart, MessageSquare, RotateCcw, Coffee, ShieldAlert, Check, Lock, Unlock,
   Sparkles, ChevronRight, Briefcase, Target, Star, RefreshCw
 } from 'lucide-react';
@@ -23,11 +23,11 @@ function scoreBadgeClass(score: number) {
   return 'bg-slate-100 text-slate-600 border-slate-200';
 }
 
-export default function NetworkTab({ 
-  networkQueue, 
-  setNetworkQueue, 
-  connections, 
-  setConnections, 
+export default function NetworkTab({
+  networkQueue,
+  setNetworkQueue,
+  connections,
+  setConnections,
   showToast,
   invites,
   setInvites
@@ -265,9 +265,7 @@ export default function NetworkTab({
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div id="view-network" className="max-w-5xl space-y-6">
-
-      {/* Header */}
+    <div id="view-network" className="max-w-7xl mx-auto w-full space-y-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-200 pb-5">
         <div>
           <h2 className="font-display font-bold text-2xl text-slate-900">WE Academic Network</h2>
@@ -280,11 +278,10 @@ export default function NetworkTab({
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
           <button
             onClick={() => setSubTab('matches')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-              subTab === 'matches'
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${subTab === 'matches'
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
                 : 'text-slate-500 hover:text-slate-950'
-            }`}
+              }`}
           >
             <Target className="w-3.5 h-3.5 text-red-500" />
             Employee Matches
@@ -296,11 +293,10 @@ export default function NetworkTab({
           </button>
           <button
             onClick={() => setSubTab('coffee')}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-              subTab === 'coffee'
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${subTab === 'coffee'
                 ? 'bg-white text-slate-900 shadow-xs border border-slate-200'
                 : 'text-slate-500 hover:text-slate-950'
-            }`}
+              }`}
           >
             <Coffee className="w-3.5 h-3.5 text-amber-600" />
             My Coffee Chats
@@ -472,11 +468,10 @@ export default function NetworkTab({
                     <div
                       key={chat.id}
                       onClick={() => setActiveChatId(chat.id)}
-                      className={`p-3 rounded-2xl flex items-center gap-3 transition cursor-pointer border ${
-                        activeChatId === chat.id
+                      className={`p-3 rounded-2xl flex items-center gap-3 transition cursor-pointer border ${activeChatId === chat.id
                           ? 'bg-slate-100/70 border-slate-300'
                           : 'bg-slate-50 border-transparent hover:bg-slate-100/40'
-                      }`}
+                        }`}
                     >
                       <div className="relative shrink-0">
                         <img className="w-10 h-10 rounded-xl object-cover" src={chat.imageUrl} alt={chat.name} referrerPolicy="no-referrer" />
@@ -505,11 +500,10 @@ export default function NetworkTab({
                   <div className="flex-1 overflow-y-auto space-y-2 mb-3 max-h-[140px] p-1 pr-2">
                     {connections.find(c => c.id === activeChatId)?.messages.map((m, i) => (
                       <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                        <span className={`px-3 py-1.5 text-xs rounded-xl max-w-[85%] leading-relaxed ${
-                          m.sender === 'user'
+                        <span className={`px-3 py-1.5 text-xs rounded-xl max-w-[85%] leading-relaxed ${m.sender === 'user'
                             ? 'bg-slate-900 text-white rounded-tr-none'
                             : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
-                        }`}>
+                          }`}>
                           {m.text}
                         </span>
                       </div>
@@ -667,11 +661,10 @@ export default function NetworkTab({
                       <div className="pt-2 border-t border-slate-200 flex flex-wrap gap-2 justify-between items-center">
                         <button
                           onClick={() => handleToggleStudentShare(inv.id)}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-bold transition flex items-center gap-1 cursor-pointer ${
-                            inv.studentSharedProfile
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-bold transition flex items-center gap-1 cursor-pointer ${inv.studentSharedProfile
                               ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                               : 'bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300'
-                          }`}
+                            }`}
                         >
                           {inv.studentSharedProfile
                             ? <><Unlock className="w-3 h-3" /> CV Shared</>

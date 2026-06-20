@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LearningMaterial } from '../../types';
 import { Upload, Trash2 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface ContentTabProps {
   materials: LearningMaterial[];
@@ -72,7 +73,7 @@ export default function ContentTab({ materials, setMaterials, showToast }: Conte
 
           {/* Dynamic simulated file trigger */}
           <button 
-            onClick={() => {
+            onClick={async () => {
               if (!newFileTitle.trim()) {
                 showToast("Please provide a valid file designation.");
                 return;
@@ -86,7 +87,29 @@ export default function ContentTab({ materials, setMaterials, showToast }: Conte
                 views: 0,
                 downloads: 0
               };
+              
+              // Optimistic UI Update
               setMaterials(prev => [newFile, ...prev]);
+              
+              // Persist to Supabase
+              const { error } = await supabase.from('learning_materials').insert({
+                id: newFile.id,
+                file_name: newFile.fileName,
+                type: newFile.type,
+                duration_or_size: newFile.durationOrSize,
+                upload_date: newFile.uploadDate,
+                views: newFile.views,
+                downloads: newFile.downloads
+              });
+
+              if (error) {
+                console.error("Error inserting material:", error);
+                showToast("Failed to save to database. Check console.");
+                // Revert optimistic update
+                setMaterials(prev => prev.filter(m => m.id !== newFile.id));
+                return;
+              }
+
               showToast(`Successfully registered and published file: "${newFile.fileName}"`);
               
               // reset fields
@@ -141,8 +164,18 @@ export default function ContentTab({ materials, setMaterials, showToast }: Conte
                     </td>
                     <td className="px-4 py-3.5 text-right">
                       <button 
-                        onClick={() => {
+                        onClick={async () => {
+                          const previousMaterials = [...materials];
                           setMaterials(prev => prev.filter(m => m.id !== mat.id));
+                          
+                          const { error } = await supabase.from('learning_materials').delete().eq('id', mat.id);
+                          if (error) {
+                            console.error("Error deleting material:", error);
+                            showToast("Failed to delete from database.");
+                            setMaterials(previousMaterials); // Revert
+                            return;
+                          }
+                          
                           showToast("Acoustic files archiving simulation successful.");
                         }}
                         className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-slate-100 transition cursor-pointer"
