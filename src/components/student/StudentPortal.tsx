@@ -22,6 +22,7 @@ import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
 import CoffeeChatTab from './CoffeeChatTab';
+import { supabase } from '../../lib/supabase';
 
 interface StudentPortalProps {
   onLogout: () => void;
@@ -63,73 +64,10 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   }, [profile]);
 
   // Projects State
-  const [projects, setProjects] = useState<Project[]>([
-    {
-      id: 'p1',
-      title: 'Smart Inventory Tracker',
-      description: 'An automated IoT inventory solution utilizing Würth RFID technology for sub-millimeter position precision and material optimization.',
-      tech: ['Python', 'MQTT', 'React'],
-      components: ['RFID Tags - W-102', 'WSEN-TIDS Sensor'],
-      imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400',
-      featured: true,
-      codeUrl: 'https://github.com/example/smart-rfid',
-      demoUrl: 'https://example.com/demo-rfid'
-    },
-    {
-      id: 'p2',
-      title: 'Automated Quality Control',
-      description: 'Computer vision hardware inspection platform designed to inspect high-density PCB assemblies for physical defects prior to reflow.',
-      tech: ['OpenCV', 'C++', 'TensorFlow'],
-      components: ['Magi3C Power Module', 'WSEN-EVAL Board'],
-      imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=400',
-      featured: false,
-      codeUrl: 'https://github.com/example/cv-qc',
-      demoUrl: 'https://example.com/demo-qc'
-    }
-  ]);
+  const [projects, setProjects] = useState<Project[]>([]);
 
   // Masterclasses
-  const [events, setEvents] = useState<MasterclassEvent[]>([
-    {
-      id: 'e1',
-      title: 'Advanced Systems Architecture: Scaling for the Future',
-      speaker: 'Dr. Lukas Miller',
-      speakerTitle: 'WE Chief Architect',
-      location: 'Innovation Hub, Berlin',
-      date: 'Oct 15, 2024',
-      time: '2:00 PM CEST',
-      tag: 'Engineering',
-      attendeesCount: 42,
-      registered: true,
-      waitlisted: false
-    },
-    {
-      id: 'e2',
-      title: 'Navigating Corporate Dynamics as a Junior Engineer',
-      speaker: 'Evelyn Vance',
-      speakerTitle: 'Vice President HR',
-      location: 'Virtual Webinar',
-      date: 'Oct 18, 2024',
-      time: '4:00 PM CEST',
-      tag: 'Leadership',
-      attendeesCount: 156,
-      registered: false,
-      waitlisted: false
-    },
-    {
-      id: 'e3',
-      title: 'Design-First Power Optimizations with RedExpert Tools',
-      speaker: 'Marcus Schmidt',
-      speakerTitle: 'Principal FAE EMEA',
-      location: 'Campus West, Lab 3',
-      date: 'Nov 02, 2024',
-      time: '10:00 AM CET',
-      tag: 'Hardware',
-      attendeesCount: 28,
-      registered: false,
-      waitlisted: false
-    }
-  ]);
+  const [events, setEvents] = useState<MasterclassEvent[]>([]);
 
   // Download Recordings / Docs
   const [materials] = useState<LearningMaterial[]>([
@@ -139,64 +77,65 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   ]);
 
   // Careers / Opportunities
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([
-    {
-      id: 'o1',
-      title: 'Advanced Robotics Engineering Intern',
-      company: 'TechNova Industrial Systems',
-      location: 'Munich, Germany (Hybrid)',
-      type: 'Internship',
-      starts: 'Oct 2024',
-      deadline: 'Oct 12, 2024',
-      countdown: 'Deadline in 3 days',
-      description: 'Join the robotics development cell. We design high-speed automated component positioning units utilizing custom RFID telemetry grids. Experience in C++ and basic electromechanical assembly is required.',
-      saved: true,
-      applied: false,
-      logoColor: 'from-orange-500 to-rose-600'
-    },
-    {
-      id: 'o2',
-      title: 'Machine Learning Research Assistant',
-      company: 'Institute of Autonomous Systems',
-      location: 'Campus North, Lab 4B',
-      type: 'Hiwi',
-      starts: 'ASAP',
-      deadline: 'Nov 15, 2024',
-      countdown: 'Deadline in 1 month',
-      description: 'Assist in real-time sensor array data evaluation. Develop robust Python models to parse multi-channel accelerometer signals and predict joint failures in automated pneumatic arms.',
-      saved: false,
-      applied: false,
-      logoColor: 'from-blue-600 to-indigo-600 font-mono'
-    },
-    {
-      id: 'o3',
-      title: 'Sustainable Grid Optimization Thesis',
-      company: 'EcoPower Gmbh (Academic Collaboration)',
-      location: 'Berlin (Remote Possible)',
-      type: 'Thesis',
-      starts: 'Nov 2024',
-      deadline: 'Rolling Admission',
-      countdown: 'Apply Early',
-      description: 'Validate efficiency parameters on secondary-side rectifiers and power chokes in medium-voltage microgrids. Thesis will be supervised jointly by Faculty and the lead power engineer at WE.',
-      saved: false,
-      applied: false,
-      logoColor: 'from-emerald-500 to-teal-600'
-    },
-    {
-      id: 'o4',
-      title: 'Future Leaders Engineering Trainee',
-      company: 'Global Dynamics Corp',
-      location: 'Multiple Locations (Global)',
-      type: 'Graduate Program',
-      starts: 'Jan 2025',
-      deadline: 'Dec 01, 2024',
-      countdown: 'Deadline Dec 01',
-      description: 'Elite 24-month rotation program spanning system engineering, operations, and technical business strategy. Includes a 6-month international rotation and direct mentorship from executive board.',
-      saved: false,
-      applied: true,
-      logoColor: 'from-fuchsia-600 to-purple-800'
+  const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+
+  // Supabase Data Fetcher
+  useEffect(() => {
+    async function loadData() {
+      // 1. Load Projects
+      const { data: projData } = await supabase.from('projects').select('*');
+      if (projData && projData.length > 0) {
+        setProjects(projData.map((p: any) => ({
+          ...p,
+          imageUrl: p.image_url,
+          codeUrl: p.code_url,
+          demoUrl: p.demo_url
+        })));
+      } else {
+        setProjects([
+          {
+            id: 'p1', title: 'Smart Inventory Tracker', description: 'An automated IoT inventory solution...',
+            tech: ['Python', 'MQTT', 'React'], components: ['RFID Tags'],
+            imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400',
+            featured: true, codeUrl: '#', demoUrl: '#'
+          }
+        ]);
+      }
+
+      // 2. Load Events
+      const { data: evtData } = await supabase.from('masterclass_events').select('*');
+      if (evtData && evtData.length > 0) {
+        setEvents(evtData.map((e: any) => ({
+          ...e,
+          speakerTitle: e.speaker_title,
+          attendeesCount: e.attendees_count
+        })));
+      } else {
+        setEvents([
+          {
+            id: 'e1', title: 'Advanced Systems Architecture', speaker: 'Dr. Lukas Miller', speakerTitle: 'WE Chief Architect',
+            location: 'Innovation Hub, Berlin', date: 'Oct 15, 2024', time: '2:00 PM CEST', tag: 'Engineering',
+            attendeesCount: 42, registered: true, waitlisted: false
+          }
+        ]);
+      }
+
+      // 3. Load Opportunities
+      const { data: oppData } = await supabase.from('opportunities').select('*');
+      if (oppData && oppData.length > 0) {
+        setOpportunities(oppData.map((o: any) => ({
+          ...o,
+          logoColor: o.logo_color
+        })));
+      } else {
+        setOpportunities([
+          { id: 'o1', title: 'Advanced Robotics Engineering Intern', company: 'TechNova', location: 'Munich', type: 'Internship', starts: 'Oct 2024', deadline: 'Jul 30, 2024', countdown: '14 days left', description: '...', saved: false, applied: false, logoColor: 'bg-blue-600' }
+        ]);
+      }
     }
-  ]);
+    loadData();
+  }, []);
+
 
   // Network Stack / Tinder Swipe Cards
   const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([

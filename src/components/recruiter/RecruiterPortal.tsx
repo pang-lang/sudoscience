@@ -13,6 +13,7 @@ import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
+import { supabase } from '../../lib/supabase';
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -22,25 +23,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // ---- DATA ENGINE INITIALIZATION ----
 
   // Candidates State with LocalStorage sync
-  const [candidates, setCandidates] = useState<Candidate[]>(() => {
-    const saved = localStorage.getItem('we_connect_candidates');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [
-      { id: 'c_sarah_j', name: 'Sarah Jenkins', university: 'LUDWIG MAXIMILIANS UNIVERSITÄT', skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'], score: 85, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300' },
-      { id: 'c1', name: 'Lukas Bauer', university: 'Technische Universität Muünchen', skills: ['Embedded C', 'PCB Design', 'RFID Systems'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300' },
-      { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300' },
-      { id: 'c3', name: 'David Schmidt', university: 'KIT Karlsruhe', skills: ['Python', 'TensorFlow', 'IoT Telemetry'], score: 98, stage: 'Saved', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300', saved: true },
-      { id: 'c4', name: 'Elena Rostova', university: 'Frei Universität Berlin', skills: ['SolidWorks Pro', 'FEA', 'Thermodynamics'], score: 91, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300' },
-      { id: 'c5', name: 'Marcus Vance', university: 'Hochschule München', skills: ['React Native', 'BLE', 'WSEN Sensors'], score: 85, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' },
-      { id: 'c6', name: 'Anna Müller', university: 'Technische Universität Stuttgart', skills: ['Signal Integrity', 'C++', 'Matlab'], score: 72, stage: 'Interview Scheduled', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300' }
-    ];
-  });
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   // Coffee Chat Invites state with LocalStorage sync
   const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
@@ -86,12 +69,34 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, [managerProfile]);
 
   // Posted Job Postings
-  const [postings, setPostings] = useState<PostedOpportunity[]>([
-    { id: 'p1', title: 'Power Management Field Graduate', type: 'Graduate Program', deadline: 'Dec 01, 2024', applicantsCount: 24, status: 'Active' },
-    { id: 'p2', title: 'IoT Electromagnetic Shielding Intern', type: 'Internship', deadline: 'Oct 15, 2024', applicantsCount: 14, status: 'Active' },
-    { id: 'p3', title: 'Passive Sensors Lab Assistant', type: 'Hiwi', deadline: 'Nov 12, 2024', applicantsCount: 8, status: 'Active' },
-    { id: 'p4', title: 'High-Frequency Inductor Performance Thesis', type: 'Thesis', deadline: 'Rolling Admission', applicantsCount: 3, status: 'Draft' }
-  ]);
+  const [postings, setPostings] = useState<PostedOpportunity[]>([]);
+
+  // Fetch initial data from Supabase
+  useEffect(() => {
+    async function loadData() {
+      // Fetch Candidates
+      const { data: candidatesData } = await supabase.from('candidates').select('*');
+      if (candidatesData && candidatesData.length > 0) {
+        setCandidates(candidatesData.map((c: any) => ({
+          ...c,
+          avatarUrl: c.avatar_url // map snake_case to camelCase
+        })));
+      } else {
+        // Fallback mock data if DB empty
+        setCandidates([
+          { id: 'c1', name: 'Lukas Bauer', university: 'Technische Universität München', skills: ['Embedded C', 'PCB Design', 'RFID Systems'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300' },
+          { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300' }
+        ]);
+      }
+      
+      // Fetch Postings (Mock fallback included)
+      setPostings([
+        { id: 'p1', title: 'Power Management Field Graduate', type: 'Graduate Program', deadline: 'Dec 01, 2024', applicantsCount: 24, status: 'Active' },
+        { id: 'p2', title: 'IoT Electromagnetic Shielding Intern', type: 'Internship', deadline: 'Oct 15, 2024', applicantsCount: 14, status: 'Active' }
+      ]);
+    }
+    loadData();
+  }, []);
 
   // Window navigation
   const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities'>('dashboard');
@@ -105,20 +110,37 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     setTimeout(() => setToast(null), 3000);
   };
 
-  // Drag simulation / instant stage update helper
-  const transitionCandidateStage = (id: string, dir: 'next' | 'prev') => {
+  // Drag simulation / instant stage update helper with Supabase persistence
+  const transitionCandidateStage = async (id: string, dir: 'next' | 'prev') => {
     const stages: Array<Candidate['stage']> = ['Talent Pool', 'Saved', 'Recruiter Review', 'Interview Scheduled'];
-    setCandidates(prev => prev.map(c => {
-      if (c.id === id) {
-        const curIdx = stages.indexOf(c.stage);
-        let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
-        if (nextIdx >= 0 && nextIdx < stages.length) {
-          showToast(`Advanced ${c.name} to "${stages[nextIdx]}"`);
-          return { ...c, stage: stages[nextIdx] };
-        }
+    
+    // Find the candidate
+    const candidate = candidates.find(c => c.id === id);
+    if (!candidate) return;
+    
+    const curIdx = stages.indexOf(candidate.stage);
+    let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
+    
+    if (nextIdx >= 0 && nextIdx < stages.length) {
+      const nextStage = stages[nextIdx];
+      
+      // Optimistic UI Update
+      setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage: nextStage } : c));
+      showToast(`Advanced ${candidate.name} to "${nextStage}"`);
+      
+      // Persist to Supabase
+      const { error } = await supabase
+        .from('candidates')
+        .update({ stage: nextStage })
+        .eq('id', id);
+        
+      if (error) {
+        console.error('Error updating stage:', error);
+        showToast(`Failed to save stage for ${candidate.name}`);
+        // Revert on error
+        setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c));
       }
-      return c;
-    }));
+    }
   };
 
   return (
