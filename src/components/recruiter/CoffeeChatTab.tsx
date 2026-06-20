@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Candidate, CoffeeChatInvite } from '../../types';
 import {
   Coffee, Star, Briefcase, Lock, Unlock, Send, Check, ShieldAlert,
-  UserCheck, Search, Sparkles, ChevronDown, ChevronUp, RefreshCw, Database
+  UserCheck, Search, Sparkles, ChevronDown, ChevronUp, RefreshCw, Database, MessageSquare
 } from 'lucide-react';
 import { db, UnifiedJob } from '../../utils/db';
 import { supabase } from '../../lib/supabase';
@@ -136,6 +136,32 @@ export default function CoffeeChatTab({
   const [subTab, setSubTab] = useState<'matches' | 'sent'>('matches');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [dbStatus, setDbStatus] = useState<'ok' | 'local' | 'checking'>('checking');
+  const [openChatInviteId, setOpenChatInviteId] = useState<string | null>(null);
+  const [chatMessage, setChatMessage] = useState('');
+
+  const handleSendChatMessage = (inviteId: string) => {
+    if (!chatMessage.trim()) return;
+    setInvites(prev => prev.map(inv => {
+      if (inv.id === inviteId) {
+        const newMsg = {
+          sender: 'employee' as const,
+          text: chatMessage.trim(),
+          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        };
+        const updatedInvite = { ...inv, messages: [...(inv.messages || []), newMsg] };
+
+        // Synchronize message update to Supabase coffee_chat_invites
+        supabase.from('coffee_chat_invites').update({
+          messages: updatedInvite.messages
+        }).eq('id', inviteId).then(() => {});
+
+        return updatedInvite;
+      }
+      return inv;
+    }));
+    setChatMessage('');
+    showToast('Message sent');
+  };
 
   // ── Load invites from Supabase on mount ──────────────────────────────────
   useEffect(() => {
@@ -332,7 +358,7 @@ export default function CoffeeChatTab({
               }`}
             >
               <Coffee className="w-3.5 h-3.5 text-amber-600" />
-              Sent Invites
+              My Connections
               {sentInvites.length > 0 && (
                 <span className="bg-amber-500 text-white font-mono text-[9px] px-1.5 rounded-full">
                   {sentInvites.length}
@@ -496,6 +522,21 @@ export default function CoffeeChatTab({
                           </div>
                         </div>
 
+                        {/* Current Project */}
+                        {cand.projects && cand.projects.length > 0 && (
+                          <div className="bg-slate-50 border border-slate-100 rounded-lg p-2.5 mt-1">
+                            <span className="text-[8px] font-mono text-slate-400 uppercase tracking-widest font-semibold block mb-1">Current Project</span>
+                            <p className="text-[10px] font-bold text-slate-800 leading-tight">{cand.projects[0].title}</p>
+                            <div className="flex flex-wrap gap-1 mt-1.5">
+                              {cand.projects[0].tech.slice(0, 4).map((t, ti) => (
+                                <span key={ti} className="text-[8px] bg-white text-slate-500 px-1.5 py-0.5 rounded font-mono border border-slate-200">
+                                  {t}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {/* Actions */}
                         <div className="mt-auto pt-3 border-t border-slate-100 flex items-center gap-2">
                           <button
@@ -568,13 +609,13 @@ export default function CoffeeChatTab({
         </div>
       )}
 
-      {/* ── SENT INVITES TAB ─────────────────────────────────────────────────── */}
+      {/* ── MY CONNECTIONS TAB ─────────────────────────────────────────────────── */}
       {subTab === 'sent' && (
         <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">
           <div className="flex justify-between items-center border-b border-slate-100 pb-4 mb-6">
             <div>
-              <h3 className="font-display font-semibold text-base text-slate-900">Coffee Chat Invitations</h3>
-              <p className="text-slate-500 text-xs mt-0.5">Sent by {managerProfile.name} · {sentInvites.length} total</p>
+              <h3 className="font-display font-semibold text-base text-slate-900">My Connections</h3>
+              <p className="text-slate-500 text-xs mt-0.5">Initiated by {managerProfile.name} · {sentInvites.length} total</p>
             </div>
             <span className="text-xs bg-amber-50 text-amber-700 border border-amber-200 font-mono font-semibold px-3 py-1 rounded-lg">
               {acceptedInvites.length} Accepted
@@ -589,77 +630,136 @@ export default function CoffeeChatTab({
                 const shared = inv.studentSharedProfile;
 
                 return (
-                  <div
-                    key={inv.id}
-                    className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50 hover:bg-white transition flex flex-col md:flex-row md:items-center justify-between gap-4"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="relative shrink-0">
-                        <img
-                          className={`w-12 h-12 rounded-xl object-cover border border-slate-200 ${!shared ? 'filter blur-xs grayscale' : ''}`}
-                          src={student.avatarUrl}
-                          alt="Student"
-                          referrerPolicy="no-referrer"
-                        />
-                        {!shared && (
-                          <div className="absolute inset-0 bg-slate-900/10 flex items-center justify-center rounded-xl">
-                            <Lock className="w-3.5 h-3.5 text-white/90" />
+                  <div key={inv.id} className="border border-slate-200 rounded-2xl bg-slate-50/50 hover:bg-white transition overflow-hidden">
+                    <div className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative shrink-0">
+                          <img
+                            className={`w-12 h-12 rounded-xl object-cover border border-slate-200 ${!shared ? 'filter blur-xs grayscale' : ''}`}
+                            src={student.avatarUrl}
+                            alt="Student"
+                            referrerPolicy="no-referrer"
+                          />
+                          {!shared && (
+                            <div className="absolute inset-0 bg-slate-900/10 flex items-center justify-center rounded-xl">
+                              <Lock className="w-3.5 h-3.5 text-white/90" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs font-bold text-slate-950 leading-tight">
+                              {shared ? student.name : `Student #${student.score}`}
+                            </h4>
+                            <ScoreBadge score={inv.score} />
                           </div>
+                          <p className="text-[10px] text-slate-500 mt-0.5">
+                            {shared ? student.university : 'Institution masked'}
+                          </p>
+                          <p className="text-[9px] text-slate-400 font-mono mt-0.5">Sent: {inv.timestamp}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${
+                          inv.status === 'accepted'
+                            ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                            : 'text-amber-700 bg-amber-50 border-amber-200'
+                        }`}>
+                          {inv.status === 'accepted' ? '✓ Accepted' : '⏳ Pending'}
+                        </span>
+
+                        {inv.status === 'accepted' && (
+                          <>
+                            <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${
+                              shared ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'
+                            }`}>
+                              {shared ? 'CV Shared' : 'CV Masked'}
+                            </span>
+
+                            <button
+                              onClick={() => onViewCandidate(student)}
+                              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-semibold border border-slate-200 cursor-pointer transition"
+                            >
+                              View CV
+                            </button>
+
+                            <button
+                              onClick={() => setOpenChatInviteId(openChatInviteId === inv.id ? null : inv.id)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
+                                openChatInviteId === inv.id
+                                  ? 'bg-slate-900 text-white border-transparent'
+                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                              }`}
+                            >
+                              <MessageSquare className="w-3 h-3" />
+                              {openChatInviteId === inv.id ? 'Close Chat' : 'Chat'}
+                            </button>
+
+                            <button
+                              onClick={() => showToast(`Internship offer sent to ${shared ? student.name : 'this candidate'}!`)}
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition ${
+                                shared
+                                  ? 'bg-amber-500 hover:bg-amber-600 text-white shadow shadow-amber-400/20'
+                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                              }`}
+                              disabled={!shared}
+                            >
+                              <UserCheck className="w-3.5 h-3.5" />
+                              Intern Offer
+                            </button>
+                          </>
                         )}
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="text-xs font-bold text-slate-950 leading-tight">
-                            {shared ? student.name : `Student #${student.score}`}
-                          </h4>
-                          <ScoreBadge score={inv.score} />
-                        </div>
-                        <p className="text-[10px] text-slate-500 mt-0.5">
-                          {shared ? student.university : 'Institution masked'}
-                        </p>
-                        <p className="text-[9px] text-slate-400 font-mono mt-0.5">Sent: {inv.timestamp}</p>
-                      </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${
-                        inv.status === 'accepted'
-                          ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                          : 'text-amber-700 bg-amber-50 border-amber-200'
-                      }`}>
-                        {inv.status === 'accepted' ? '✓ Accepted' : '⏳ Pending'}
-                      </span>
-
-                      {inv.status === 'accepted' && (
-                        <>
-                          <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${
-                            shared ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-amber-700 bg-amber-50 border-amber-200'
-                          }`}>
-                            {shared ? 'CV Shared' : 'CV Masked'}
+                    {/* Chat Panel */}
+                    {inv.status === 'accepted' && openChatInviteId === inv.id && (
+                      <div className="border-t border-slate-200 bg-white p-4 space-y-3">
+                        <div className="bg-slate-900 -mx-4 -mt-4 px-4 py-2 flex items-center gap-2 mb-2">
+                          <MessageSquare className="w-3.5 h-3.5 text-amber-400" />
+                          <span className="text-[10px] text-white font-mono font-semibold uppercase tracking-wider">
+                            Chat with {shared ? student.name : 'Candidate (Masked)'}
                           </span>
-
+                        </div>
+                        <div className="max-h-48 overflow-y-auto space-y-2 p-1">
+                          {(inv.messages && inv.messages.length > 0) ? (
+                            inv.messages.map((msg, mi) => (
+                              <div key={mi} className={`flex ${msg.sender === 'employee' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${
+                                  msg.sender === 'employee'
+                                    ? 'bg-slate-900 text-white rounded-tr-none shadow shadow-slate-900/10'
+                                    : 'bg-slate-100 text-slate-700 border border-slate-200 rounded-tl-none'
+                                }`}>
+                                  <p>{msg.text}</p>
+                                  <span className={`text-[8px] block mt-1 text-right ${
+                                    msg.sender === 'employee' ? 'text-slate-400' : 'text-slate-450'
+                                  }`}>{msg.timestamp}</span>
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            <p className="text-xs text-slate-400 text-center py-4 font-mono">No messages yet. Start the conversation!</p>
+                          )}
+                        </div>
+                        <div className="flex gap-2 pt-2 border-t border-slate-100">
+                          <input
+                            type="text"
+                            value={chatMessage}
+                            onChange={(e) => setChatMessage(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSendChatMessage(inv.id); }}
+                            placeholder="Type a message..."
+                            className="flex-1 text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-slate-800 transition"
+                          />
                           <button
-                            onClick={() => onViewCandidate(student)}
-                            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-semibold border border-slate-200 cursor-pointer transition"
+                            onClick={() => handleSendChatMessage(inv.id)}
+                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
                           >
-                            View CV
+                            Send
                           </button>
-
-                          <button
-                            onClick={() => showToast(`Internship offer sent to ${shared ? student.name : 'this candidate'}!`)}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold flex items-center gap-1 cursor-pointer transition ${
-                              shared
-                                ? 'bg-amber-500 hover:bg-amber-600 text-white shadow shadow-amber-400/20'
-                                : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                            }`}
-                            disabled={!shared}
-                          >
-                            <UserCheck className="w-3.5 h-3.5" />
-                            Intern Offer
-                          </button>
-                        </>
-                      )}
-                    </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -667,9 +767,9 @@ export default function CoffeeChatTab({
           ) : (
             <div className="py-16 text-center border-2 border-dashed border-slate-200 rounded-3xl">
               <Coffee className="w-10 h-10 text-slate-300 mx-auto mb-2" />
-              <h4 className="font-display font-semibold text-slate-700 text-sm">No invites sent yet</h4>
+              <h4 className="font-display font-semibold text-slate-700 text-sm">No connections established yet</h4>
               <p className="text-xs text-slate-400 mt-1 max-w-xs mx-auto">
-                Go to <strong>Candidate Matches</strong> and send a coffee chat invite to a student!
+                Go to <strong>Candidate Matches</strong> and invite a student to connect!
               </p>
             </div>
           )}

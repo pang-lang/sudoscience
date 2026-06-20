@@ -5,7 +5,7 @@ import {
   X, Heart, MessageSquare, RotateCcw, Coffee, ShieldAlert, Check, Lock, Unlock,
   Sparkles, ChevronRight, Briefcase, Target, Star, RefreshCw
 } from 'lucide-react';
-
+import { supabase } from '../../lib/supabase';
 interface NetworkTabProps {
   networkQueue: NetworkProfile[];
   setNetworkQueue: React.Dispatch<React.SetStateAction<NetworkProfile[]>>;
@@ -36,14 +36,45 @@ export default function NetworkTab({
   const [typedMessage, setTypedMessage] = useState('');
   const [swipeDir, setSwipeDir] = useState<'left' | 'right' | null>(null);
 
-  // Sub-tab state
   const [subTab, setSubTab] = useState<'matches' | 'coffee'>('matches');
 
-  // ── Chat helpers ──────────────────────────────────────────────────────────
+  // Synchronize invite messages to connections state when invites change
+  React.useEffect(() => {
+    setConnections(prev => {
+      let changed = false;
+      const next = prev.map(chat => {
+        const matchingInvite = invites.find(inv =>
+          `chat_${inv.id}` === chat.id ||
+          `coffee_${inv.id}` === chat.id ||
+          `coffee_${inv.candidateId}_${inv.id}` === chat.id
+        );
+        if (matchingInvite && matchingInvite.messages && matchingInvite.messages.length > 0) {
+          const mappedMsgs = matchingInvite.messages.map(m => ({
+            sender: m.sender === 'student' ? ('user' as const) : ('other' as const),
+            text: m.text,
+            timestamp: m.timestamp
+          }));
+          const lastMsg = matchingInvite.messages[matchingInvite.messages.length - 1].text;
+
+          if (JSON.stringify(chat.messages) !== JSON.stringify(mappedMsgs)) {
+            changed = true;
+            return {
+              ...chat,
+              lastMessage: lastMsg,
+              messages: mappedMsgs
+            };
+          }
+        }
+        return chat;
+      });
+      return changed ? next : prev;
+    });
+  }, [invites, setConnections]);
 
   const sendChatMessage = () => {
     if (!typedMessage.trim() || !activeChatId) return;
-    
+
+    // 1. Update connections
     setConnections(prev => prev.map(chat => {
       if (chat.id === activeChatId) {
         return {
@@ -58,33 +89,63 @@ export default function NetworkTab({
       return chat;
     }));
 
+    // 2. Sync to invites if it's a coffee chat
+    const matchingInvite = invites.find(inv =>
+      `chat_${inv.id}` === activeChatId ||
+      `coffee_${inv.id}` === activeChatId ||
+      inv.managerName === connections.find(c => c.id === activeChatId)?.name
+    );
+
+    if (matchingInvite) {
+      setInvites(prev => prev.map(inv => {
+        if (inv.id === matchingInvite.id) {
+          const newMsg = {
+            sender: 'student' as const,
+            text: typedMessage.trim(),
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          };
+          const updatedInvite = { ...inv, messages: [...(inv.messages || []), newMsg] };
+
+          // Sync to Supabase
+          supabase.from('coffee_chat_invites').update({
+            messages: updatedInvite.messages
+          }).eq('id', matchingInvite.id).then(() => {});
+
+          return updatedInvite;
+        }
+        return inv;
+      }));
+    }
+
     setTypedMessage('');
 
-    setTimeout(() => {
-      setConnections(prev => prev.map(chat => {
-        if (chat.id === activeChatId) {
-          const replies = [
-            "That sounds brilliant! Send me over your latest schematic layout to review.",
-            "Absolutely! Let's arrange a Teams call to discuss the details.",
-            "Yes, Würth Elektronik is hosting a student kit distribution next Tuesday. You should secure a spot!",
-            "Fascinating approach. Let me talk to the R&D supervisor in Munich.",
-            "Great initiative! That component fits perfectly into active design regulations."
-          ];
-          const randomReply = replies[Math.floor(Math.random() * replies.length)];
-          return {
-            ...chat,
-            lastMessage: randomReply,
-            messages: [
-              ...chat.messages,
-              { sender: 'other' as const, text: randomReply, timestamp: 'Just now' }
-            ]
-          };
-        }
-        return chat;
-      }));
-    }, 1200);
+    // Fallback: if not matching any invite, simulate mock reply
+    if (!matchingInvite) {
+      setTimeout(() => {
+        setConnections(prev => prev.map(chat => {
+          if (chat.id === activeChatId) {
+            const replies = [
+              "That sounds brilliant! Send me over your latest schematic layout to review.",
+              "Absolutely! Let's arrange a Teams call to discuss the details.",
+              "Yes, Würth Elektronik is hosting a student kit distribution next Tuesday. You should secure a spot!",
+              "Fascinating approach. Let me talk to the R&D supervisor in Munich.",
+              "Great initiative! That component fits perfectly into active design regulations."
+            ];
+            const randomReply = replies[Math.floor(Math.random() * replies.length)];
+            return {
+              ...chat,
+              lastMessage: randomReply,
+              messages: [
+                ...chat.messages,
+                { sender: 'other' as const, text: randomReply, timestamp: 'Just now' }
+              ]
+            };
+          }
+          return chat;
+        }));
+      }, 1200);
+    }
   };
-
   // ── Swipe handlers ────────────────────────────────────────────────────────
 
   const handlePass = () => {

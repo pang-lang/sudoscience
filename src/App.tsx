@@ -4,9 +4,47 @@ import RoleSelector from './components/shared/RoleSelector';
 import StudentPortal from './components/student/StudentPortal';
 import RecruiterPortal from './components/recruiter/RecruiterPortal';
 import EducatorPortal from './components/educator/EducatorPortal';
+import { supabase } from './lib/supabase';
+
+interface AuthUser {
+  name: string;
+  email: string;
+  avatarUrl: string;
+}
 
 export default function App() {
   const [role, setRole] = useState<UserRole>(null);
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+
+  // Listen for Supabase auth state changes (Google OAuth redirect)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user) {
+        const meta = session.user.user_metadata;
+        setAuthUser({
+          name: meta?.full_name || meta?.name || session.user.email || 'User',
+          email: session.user.email || '',
+          avatarUrl: meta?.avatar_url || meta?.picture || ''
+        });
+      } else {
+        setAuthUser(null);
+      }
+    });
+
+    // Check existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const meta = session.user.user_metadata;
+        setAuthUser({
+          name: meta?.full_name || meta?.name || session.user.email || 'User',
+          email: session.user.email || '',
+          avatarUrl: meta?.avatar_url || meta?.picture || ''
+        });
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Parse URL hash routing on boot
   useEffect(() => {
@@ -43,15 +81,18 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setRole(null);
     window.location.hash = '';
+    // Sign out from Supabase (clears Google session too)
+    await supabase.auth.signOut();
+    setAuthUser(null);
   };
 
   return (
     <div className="bg-slate-50 min-h-screen text-slate-800 antialiased font-sans">
       {role === null && (
-        <RoleSelector onSelectRole={handleSelectRole} />
+        <RoleSelector onSelectRole={handleSelectRole} authUser={authUser} />
       )}
       {role === 'student' && (
         <StudentPortal onLogout={handleLogout} />

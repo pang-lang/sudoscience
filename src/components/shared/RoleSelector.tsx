@@ -1,13 +1,28 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { UserRole } from '../../types';
-import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight } from 'lucide-react';
+import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight, LogIn } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 interface RoleSelectorProps {
   onSelectRole: (role: UserRole) => void;
+  authUser?: { name: string; email: string; avatarUrl: string } | null;
 }
 
-export default function RoleSelector({ onSelectRole }: RoleSelectorProps) {
+export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorProps) {
+  const handleGoogleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if (error) {
+      console.error('Google sign-in error:', error.message);
+      alert('Google sign-in failed. Use "Quick Sandbox Login" for demo access.');
+    }
+  };
+
   return (
     <div id="role-selector" className="min-h-screen bg-slate-50 flex flex-col font-sans select-none relative overflow-hidden">
       {/* Decorative patterns */}
@@ -28,18 +43,33 @@ export default function RoleSelector({ onSelectRole }: RoleSelectorProps) {
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <button 
-            onClick={() => onSelectRole('student')}
-            className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
-          >
-            Quick Sandbox Login
-          </button>
-          <button 
-            onClick={() => onSelectRole('student')}
-            className="px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 transition shadow-sm hover:shadow-md cursor-pointer"
-          >
-            Sign In
-          </button>
+          {authUser ? (
+            <div className="flex items-center gap-3">
+              {authUser.avatarUrl && (
+                <img src={authUser.avatarUrl} alt="" className="w-7 h-7 rounded-full border border-slate-200" referrerPolicy="no-referrer" />
+              )}
+              <span className="text-xs font-semibold text-slate-700">{authUser.name}</span>
+              <span className="text-[9px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full font-mono font-semibold border border-emerald-200">
+                Authenticated
+              </span>
+            </div>
+          ) : (
+            <>
+              <button 
+                onClick={() => onSelectRole('student')}
+                className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
+              >
+                Quick Sandbox Login
+              </button>
+              <button 
+                onClick={handleGoogleSignIn}
+                className="px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 transition shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5"
+              >
+                <LogIn className="w-3.5 h-3.5" />
+                Sign In with Google
+              </button>
+            </>
+          )}
         </div>
       </nav>
 

@@ -6,7 +6,7 @@ import {
   CoffeeChatInvite
 } from '../../types';
 import {
-  Briefcase, Search, BarChart3, Users, Sparkles, X, Lock, Unlock, ShieldAlert, Check, Send, UserCheck, Coffee
+  Briefcase, Search, BarChart3, Users, Sparkles, X, Lock, Unlock, ShieldAlert, Check, Send, UserCheck, Coffee, MessageSquare, FolderOpen
 } from 'lucide-react';
 import { db } from '../../utils/db';
 
@@ -71,6 +71,18 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, [invites]);
 
   useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'we_connect_chat_invites' && e.newValue) {
+        try {
+          setInvites(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem('we_connect_manager_profile', JSON.stringify(managerProfile));
   }, [managerProfile]);
 
@@ -79,6 +91,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
   // Global CV Modal State
   const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Candidate | null>(null);
+  const [chatMessage, setChatMessage] = useState('');
 
   // Talent Discovery match threshold (for job-position fit, HR use)
   const [matchThreshold, setMatchThreshold] = useState<number>(() => {
@@ -110,7 +123,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         const { data: candidatesData, error } = await supabase.from('candidates').select('*');
         if (error) throw error;
         if (candidatesData) {
-          const mappedCandidates = candidatesData.map((c: any) => ({
+          const mappedCandidates: Candidate[] = candidatesData.map((c: any) => ({
             id: c.id,
             name: c.name,
             university: c.university,
@@ -120,6 +133,25 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
             saved: c.saved || false
           }));
+          
+          // Ensure c_sarah_j (Sarah Jenkins) is always preserved
+          const hasSarah = mappedCandidates.some((c: any) => c.id === 'c_sarah_j');
+          if (!hasSarah) {
+            const sarahDefault = db.getCandidates().find(c => c.id === 'c_sarah_j') || {
+              id: 'c_sarah_j',
+              name: 'Sarah Jenkins',
+              university: 'Munich University of Applied Sciences',
+              skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'],
+              score: 85,
+              stage: 'Talent Pool' as const,
+              avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
+              projects: [
+                { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'] },
+                { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'] }
+              ]
+            };
+            mappedCandidates.push(sarahDefault);
+          }
           
           // Save to our local unified DB first
           db.saveCandidates(mappedCandidates);
@@ -131,13 +163,38 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       // Load candidates from db.ts to preserve local sync (e.g. Sarah Jenkins' visa stamps & updated score)
       setCandidates(db.getCandidates());
 
-      // 2. Fetch Postings from Supabase
+      // 2. Fetch Postings, Applications, and Candidates from Supabase
       try {
-        const { data: jobsData, error } = await supabase.from('opportunities').select('*');
-        if (error) throw error;
+        const { data: jobsData, error: jobsErr } = await supabase.from('opportunities').select('*');
+        const { data: appsData } = await supabase.from('opportunity_applications').select('*');
+        const { data: candsData } = await supabase.from('candidates').select('*');
+        
+        if (jobsErr) throw jobsErr;
         if (jobsData) {
           const mappedJobs = jobsData.map((o: any) => {
             const existing = db.getJobs().find(old => old.id === o.id);
+            let parsedSkills: string[] = [];
+            if (o.skills) {
+              parsedSkills = o.skills.split(',').map((s: string) => s.trim()).filter(Boolean);
+            } else if (o.required_skills && o.required_skills.length > 0) {
+              parsedSkills = o.required_skills;
+            } else if (existing) {
+              parsedSkills = existing.requiredSkills;
+            } else {
+              parsedSkills = ['Project Management'];
+            }
+
+            // Join applicant details
+            const jobApps = appsData ? appsData.filter((a: any) => a.opportunity_id === o.id) : [];
+            const applicantNames = jobApps.map((a: any) => {
+              const cand = candsData ? candsData.find((c: any) => c.id === a.student_id) : null;
+              if (cand) return cand.name;
+              if (a.student_id === 'c_sarah_j' || a.student_id === '11111111-1111-1111-1111-111111111111') {
+                return 'Sarah Jenkins';
+              }
+              return `Candidate #${a.student_id.slice(0, 4)}`;
+            });
+
             return {
               id: o.id,
               title: o.title,
@@ -149,9 +206,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               countdown: o.countdown || 'Apply Early',
               description: o.description || '',
               logoColor: o.logo_color || o.logoColor || 'from-red-600 to-slate-900',
-              requiredSkills: existing ? existing.requiredSkills : (o.required_skills || ['Project Management']),
+              requiredSkills: parsedSkills,
               status: o.status || 'Active',
-              applicantsCount: o.applicants_count || o.applicantsCount || 0
+              applicantsCount: applicantNames.length,
+              applicantNames
             };
           });
           db.saveJobs(mappedJobs);
@@ -184,22 +242,39 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       next.forEach(p => {
         const exists = prev.some(old => old.id === p.id);
         if (!exists) {
-          // Map to unified job creation
-          let skills = ['Project Management'];
-          const lowerTitle = p.title.toLowerCase();
-          if (lowerTitle.includes('power') || lowerTitle.includes('energy') || lowerTitle.includes('voltage') || lowerTitle.includes('choke') || lowerTitle.includes('inductor')) {
-            skills = ['Power Electronics', 'Simulink', 'CAD', 'PCB Design'];
-          } else if (lowerTitle.includes('rf') || lowerTitle.includes('shielding') || lowerTitle.includes('electromagnetic') || lowerTitle.includes('sensor') || lowerTitle.includes('iot') || lowerTitle.includes('radio')) {
-            skills = ['Embedded C', 'PCB Design', 'RFID Systems', 'BLE', 'SolidWorks'];
-          } else if (lowerTitle.includes('robot') || lowerTitle.includes('automation') || lowerTitle.includes('mechanical') || lowerTitle.includes('hardware')) {
-            skills = ['SolidWorks Pro', 'FEA Modeling', 'CAD', 'C++'];
-          } else if (lowerTitle.includes('data') || lowerTitle.includes('analyst') || lowerTitle.includes('learning') || lowerTitle.includes('python') || lowerTitle.includes('ml') || lowerTitle.includes('ai')) {
-            skills = ['Python', 'TensorFlow', 'Data Analysis', 'Matlab'];
-          } else if (lowerTitle.includes('software') || lowerTitle.includes('web') || lowerTitle.includes('app') || lowerTitle.includes('fullstack') || lowerTitle.includes('developer')) {
-            skills = ['C++', 'Python', 'React Native', 'Embedded C', 'Data Analysis'];
+          let skills = p.requiredSkills && p.requiredSkills.length > 0
+            ? p.requiredSkills
+            : ['Project Management'];
+            
+          if (!p.requiredSkills || p.requiredSkills.length === 0) {
+            const lowerTitle = p.title.toLowerCase();
+            if (lowerTitle.includes('power') || lowerTitle.includes('energy') || lowerTitle.includes('voltage') || lowerTitle.includes('choke') || lowerTitle.includes('inductor')) {
+              skills = ['Power Electronics', 'Simulink', 'CAD', 'PCB Design'];
+            } else if (lowerTitle.includes('rf') || lowerTitle.includes('shielding') || lowerTitle.includes('electromagnetic') || lowerTitle.includes('sensor') || lowerTitle.includes('iot') || lowerTitle.includes('radio')) {
+              skills = ['Embedded C', 'PCB Design', 'RFID Systems', 'BLE', 'SolidWorks'];
+            } else if (lowerTitle.includes('robot') || lowerTitle.includes('automation') || lowerTitle.includes('mechanical') || lowerTitle.includes('hardware')) {
+              skills = ['SolidWorks Pro', 'FEA Modeling', 'CAD', 'C++'];
+            } else if (lowerTitle.includes('data') || lowerTitle.includes('analyst') || lowerTitle.includes('learning') || lowerTitle.includes('python') || lowerTitle.includes('ml') || lowerTitle.includes('ai')) {
+              skills = ['Python', 'TensorFlow', 'Data Analysis', 'Matlab'];
+            } else if (lowerTitle.includes('software') || lowerTitle.includes('web') || lowerTitle.includes('app') || lowerTitle.includes('fullstack') || lowerTitle.includes('developer')) {
+              skills = ['C++', 'Python', 'React Native', 'Embedded C', 'Data Analysis'];
+            }
           }
 
           db.addOpportunity(p.title, p.type, p.deadline, skills, `Join us as a ${p.title}. Lead hardware layouts and systems integration research.`);
+          
+          // Sync to Supabase
+          supabase.from('opportunities').insert({
+            id: p.id,
+            title: p.title,
+            company: 'Würth Elektronik',
+            location: 'Munich, Germany',
+            type: p.type,
+            deadline: p.deadline,
+            skills: skills.join(', '),
+            required_skills: skills,
+            status: 'Active'
+          }).then(() => {});
         }
       });
 
@@ -331,6 +406,19 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     showToast(`Internship Placement Offer dispatched to ${candName}!`);
   };
 
+  const handleSendChatMessage = (inviteId: string) => {
+    if (!chatMessage.trim()) return;
+    setInvites(prev => prev.map(inv => {
+      if (inv.id === inviteId) {
+        const newMsg = { sender: 'employee' as const, text: chatMessage.trim(), timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        return { ...inv, messages: [...(inv.messages || []), newMsg] };
+      }
+      return inv;
+    }));
+    setChatMessage('');
+    showToast('Message sent');
+  };
+
   const getMaskedName = (cand: Candidate) => {
     const initials = cand.name.split(' ').map(n => n[0]).join('');
     return `Candidate #${initials}${cand.score}`;
@@ -341,7 +429,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     : null;
 
   const isProfileShared = activeInvite?.status === 'accepted' && activeInvite.studentSharedProfile;
-  const isAnonymized = !isProfileShared;
+  const isAnonymized = false;
 
   return (
     <div id="recruiter-portal-root" className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
@@ -366,7 +454,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
         {/* Brand layout block */}
         <div className="p-6 border-b border-slate-900">
-          <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={() => setCurrentTab('dashboard')}>
+          <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={onLogout}>
             <span className="bg-red-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
             <span className="font-bold text-lg text-white">Connect</span>
           </div>
@@ -408,7 +496,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <Search className="w-4 h-4" />
               <span>Talent Discovery</span>
             </div>
-            <span className="text-[10px] bg-red-600/15 text-red-400 px-1.5 py-0.5 rounded-sm font-mono">+240</span>
           </button>
 
           <button
@@ -621,8 +708,16 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-widest block">ENG SCORE</span>
-                      <span className="text-red-600 font-sans font-bold text-sm block mt-0.5">{selectedCandidateForModal.score}/100</span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-widest block">
+                        {(selectedCandidateForModal as any).calculatedScore !== undefined && (selectedCandidateForModal as any).calculatedScore !== selectedCandidateForModal.score
+                          ? 'JOB FIT SCORE'
+                          : 'ENG SCORE'}
+                      </span>
+                      <span className="text-red-600 font-sans font-bold text-sm block mt-0.5">
+                        {(selectedCandidateForModal as any).calculatedScore !== undefined 
+                          ? (selectedCandidateForModal as any).calculatedScore 
+                          : selectedCandidateForModal.score}/100
+                      </span>
                     </div>
                     <div>
                       <span className="text-[10px] text-slate-400 uppercase tracking-widest block">Status</span>
@@ -635,88 +730,64 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               </div>
 
               {/* Competency tags list in popup */}
-              <div className="p-6 bg-slate-100/50 border-t border-slate-100">
+              <div className="p-6 bg-slate-100/50 border-t border-slate-100 max-h-[60vh] overflow-y-auto">
                 <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest block font-semibold">Verified Capstones & Stamps</span>
                 <div className="flex flex-wrap gap-1.5 mt-2.5">
-                  {selectedCandidateForModal.skills.map((s, idx) => (
-                    <span key={idx} className="bg-white border border-slate-205 text-slate-700 text-xs px-2.5 py-1 rounded-md font-semibold">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-                
-                {/* Invitation / Offer Dispatch button */}
-                <div className="mt-6 flex flex-col gap-3">
-                  {selectedCandidateForModal.score >= matchThreshold ? (
-                    <div>
-                      {!activeInvite ? (
-                        <button 
-                          onClick={() => {
-                            handleSendInvite(selectedCandidateForModal);
-                            setSelectedCandidateForModal(null);
-                          }}
-                          className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl transition text-center cursor-pointer flex items-center justify-center gap-1.5 shadow shadow-red-500/20"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          Invite to Coffee Chat
-                        </button>
-                      ) : activeInvite.status === 'pending' ? (
-                        <button 
-                          disabled
-                          className="w-full py-2.5 bg-slate-200 text-slate-500 font-semibold text-xs rounded-xl text-center cursor-not-allowed"
-                        >
-                          Invite Sent (Pending Student Response)
-                        </button>
-                      ) : activeInvite.status === 'accepted' ? (
-                        <div className="space-y-2">
-                          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] text-emerald-800 font-mono flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-500" />
-                            <span>Connected & Match Active</span>
-                          </div>
-                          
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleToggleManagerShare(activeInvite.id)}
-                              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                                activeInvite.managerSharedProfile 
-                                  ? 'bg-slate-900 text-white border-transparent' 
-                                  : 'bg-white text-slate-700 border-slate-250 hover:bg-slate-50'
-                              }`}
-                            >
-                              {activeInvite.managerSharedProfile ? 'Revoke Profile Share' : 'Share Contact Details'}
-                            </button>
-
-                            <button 
-                              onClick={() => {
-                                handleSendOffer(isProfileShared ? selectedCandidateForModal.name : getMaskedName(selectedCandidateForModal));
-                                setSelectedCandidateForModal(null);
-                              }}
-                              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                                isProfileShared 
-                                  ? 'bg-red-600 hover:bg-red-700 text-white shadow shadow-red-500/20' 
-                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                              }`}
-                              disabled={!isProfileShared}
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                              Send Intern Offer
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-slate-100 p-3 rounded-xl text-center text-xs font-semibold text-slate-500">
-                          Invite Declined by Student
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-slate-100 p-3.5 rounded-2xl flex items-center gap-2 border border-slate-200 text-slate-500">
-                      <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="text-[11px] font-mono leading-tight">
-                        Locked: Candidate match score ({selectedCandidateForModal.score}) must exceed the threshold ({matchThreshold}) to enable coffee chat invitations.
+                  {selectedCandidateForModal.skills.map((s, idx) => {
+                    const isMatched = (selectedCandidateForModal as any).matchedSkills?.some(
+                      (ms: string) => ms.toLowerCase() === s.toLowerCase()
+                    );
+                    return (
+                      <span 
+                        key={idx} 
+                        className={`text-xs px-2.5 py-1 rounded-md font-semibold border ${
+                          isMatched 
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10' 
+                            : 'bg-white border-slate-200 text-slate-700'
+                        }`}
+                      >
+                        {s}
                       </span>
+                    );
+                  })}
+                </div>
+
+                {/* Projects Section */}
+                {selectedCandidateForModal.projects && selectedCandidateForModal.projects.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-slate-200">
+                    <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest block font-semibold flex items-center gap-1.5">
+                      <FolderOpen className="w-3 h-3" />
+                      Engineering Projects
+                    </span>
+                    <div className="space-y-3 mt-3">
+                      {selectedCandidateForModal.projects.map((proj, idx) => (
+                        <div key={idx} className="bg-white border border-slate-200 rounded-xl p-3">
+                          <h5 className="text-xs font-bold text-slate-900 font-display">{proj.title}</h5>
+                          <p className="text-[10px] text-slate-500 mt-1 leading-relaxed">{proj.description}</p>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {proj.tech.map((t, ti) => (
+                              <span key={ti} className="text-[9px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-medium">
+                                {t}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
+                )}
+                
+                {/* CV Actions Section */}
+                <div className="mt-6 flex flex-col gap-3">
+                  <button 
+                    onClick={() => {
+                      showToast(`Downloaded ${selectedCandidateForModal.name.replace(/\s+/g, '_')}_Resume.pdf`);
+                    }}
+                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition text-center cursor-pointer flex items-center justify-center gap-1.5 shadow"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    Download CV (PDF)
+                  </button>
                 </div>
               </div>
             </motion.div>

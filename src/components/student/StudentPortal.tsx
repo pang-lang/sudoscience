@@ -162,6 +162,17 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
         if (oppData) {
           const mappedJobs = oppData.map((o: any) => {
             const existing = db.getJobs().find(old => old.id === o.id);
+            let parsedSkills: string[] = [];
+            if (o.skills) {
+              parsedSkills = o.skills.split(',').map((s: string) => s.trim()).filter(Boolean);
+            } else if (o.required_skills && o.required_skills.length > 0) {
+              parsedSkills = o.required_skills;
+            } else if (existing) {
+              parsedSkills = existing.requiredSkills;
+            } else {
+              parsedSkills = ['Project Management'];
+            }
+
             return {
               id: o.id,
               title: o.title,
@@ -173,7 +184,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
               countdown: o.countdown || 'Apply Early',
               description: o.description || '',
               logoColor: o.logo_color || o.logoColor || 'from-red-600 to-slate-900',
-              requiredSkills: existing ? existing.requiredSkills : (o.required_skills || ['Project Management']),
+              requiredSkills: parsedSkills,
               status: o.status || 'Active',
               applicantsCount: o.applicants_count || o.applicantsCount || 0
             };
@@ -200,6 +211,20 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           }
           if (old.applied !== opp.applied && opp.applied) {
             db.applyToOpportunity(opp.id);
+            supabase.auth.getSession().then(({ data: { session } }) => {
+              const studentId = session?.user?.id || '11111111-1111-1111-1111-111111111111';
+              supabase.from('opportunity_applications').insert({
+                student_id: studentId,
+                opportunity_id: opp.id,
+                status: 'applied'
+              }).then(({ error }) => {
+                if (error) {
+                  console.error('Error inserting application to Supabase:', error.message);
+                } else {
+                  console.log('Synced application successfully to Supabase');
+                }
+              });
+            });
           }
         }
       });
@@ -325,6 +350,18 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     localStorage.setItem('we_connect_chat_invites', JSON.stringify(invites));
   }, [invites]);
 
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'we_connect_chat_invites' && e.newValue) {
+        try {
+          setInvites(JSON.parse(e.newValue));
+        } catch {}
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
   // ---- APP WINDOW STATE RENDERING ----
   const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
   
@@ -359,7 +396,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
         {/* WE Brand branding */}
         <div className="p-6 border-b border-slate-900">
-          <div className="flex items-center gap-2 mb-1 cursor-pointer" onClick={() => setCurrentTab('passport')}>
+          <div className="flex items-center gap-2 mb-1 cursor-pointer" onClick={onLogout}>
             <span className="bg-red-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
             <span className="font-display font-bold text-lg text-white">Connect</span>
           </div>

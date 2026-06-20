@@ -124,6 +124,7 @@ export interface Candidate {
   stage: 'Talent Pool' | 'Saved' | 'Recruiter Review' | 'Interview Scheduled';
   avatarUrl: string;
   saved?: boolean;
+  projects?: { title: string; description: string; tech: string[] }[];
 }
 
 export interface PostedOpportunity {
@@ -133,6 +134,8 @@ export interface PostedOpportunity {
   deadline: string;
   applicantsCount: number;
   status: 'Active' | 'Draft' | 'Closed';
+  requiredSkills?: string[];
+  applicantNames?: string[];
 }
 
 // Educator definitions
@@ -166,5 +169,6 @@ export interface CoffeeChatInvite {
   studentSharedProfile: boolean;
   managerSharedProfile: boolean;
   timestamp: string;
+  messages?: { sender: 'employee' | 'student'; text: string; timestamp: string }[];
 }
 

@@ -126,7 +126,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
         
         {/* Brand layout block */}
         <div className="p-6 border-b border-slate-900">
-          <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={() => setCurrentTab('content')}>
+          <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={onLogout}>
             <span className="bg-red-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
             <span className="font-bold text-lg text-white">Connect</span>
           </div>

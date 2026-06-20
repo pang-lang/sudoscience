@@ -36,8 +36,11 @@ export default function DiscoveryTab({
       c.skills.join(' ').toLowerCase().includes(discoverySearch.toLowerCase())
     )
     .map(c => {
-      const score = selectedJob ? db.calculateMatchScore(c, selectedJob) : c.score;
-      return { ...c, calculatedScore: score };
+      if (selectedJob) {
+        const result = db.calculateMatchScore(c, selectedJob);
+        return { ...c, calculatedScore: result.score, matchedSkills: result.matchedSkills, totalRequired: result.totalRequired };
+      }
+      return { ...c, calculatedScore: c.score, matchedSkills: [] as string[], totalRequired: 0 };
     });
 
   const isGroupingEnabled = selectedJobId !== 'All' && selectedJob;
@@ -93,10 +96,17 @@ export default function DiscoveryTab({
             </div>
 
             <div className="text-right shrink-0">
-              <span className="text-[9px] text-slate-400 font-mono uppercase block mb-0.5">Score</span>
+              <span className="text-[9px] text-slate-400 font-mono uppercase block mb-0.5">
+                {isGroupingEnabled ? 'Job Fit' : 'Engagement'}
+              </span>
               <span className={`text-xs font-black font-mono px-1.5 py-0.5 rounded border ${scoreBadgeClass(cand.calculatedScore)}`}>
                 {cand.calculatedScore}/100
               </span>
+              {isGroupingEnabled && cand.totalRequired > 0 && (
+                <span className="block text-[8px] font-mono text-slate-400 mt-1">
+                  {cand.matchedSkills.length}/{cand.totalRequired} skills
+                </span>
+              )}
             </div>
           </div>
 

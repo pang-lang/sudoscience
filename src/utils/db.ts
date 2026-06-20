@@ -187,6 +187,7 @@ export interface UnifiedJob {
   requiredSkills: string[];
   status: 'Active' | 'Draft' | 'Closed';
   applicantsCount: number;
+  applicantNames?: string[];
 }
 
 export interface EventRegistration {
@@ -261,13 +262,30 @@ const DEFAULT_JOBS: UnifiedJob[] = [
 ];
 
 const DEFAULT_CANDIDATES: Candidate[] = [
-  { id: 'c_sarah_j', name: 'Sarah Jenkins', university: 'Munich University of Applied Sciences', skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'], score: 85, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300' },
-  { id: 'c1', name: 'Lukas Bauer', university: 'Technische Universität München', skills: ['Embedded C', 'PCB Design', 'RFID Systems', 'BLE'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300' },
-  { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD', 'PCB Design'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300' },
-  { id: 'c3', name: 'David Schmidt', university: 'KIT Karlsruhe', skills: ['Python', 'TensorFlow', 'IoT Telemetry', 'Data Analysis'], score: 98, stage: 'Saved', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300', saved: true },
-  { id: 'c4', name: 'Elena Rostova', university: 'Freie Universität Berlin', skills: ['SolidWorks Pro', 'FEA Modeling', 'Thermodynamics', 'Project Management'], score: 91, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300' },
-  { id: 'c5', name: 'Marcus Vance', university: 'Hochschule München', skills: ['React Native', 'BLE', 'WSEN Sensors', 'Embedded C'], score: 85, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' },
-  { id: 'c6', name: 'Anna Müller', university: 'Technische Universität Stuttgart', skills: ['Signal Integrity', 'C++', 'Matlab', 'Data Analysis'], score: 72, stage: 'Interview Scheduled', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300' }
+  { id: 'c_sarah_j', name: 'Sarah Jenkins', university: 'Munich University of Applied Sciences', skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'], score: 85, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300', projects: [
+    { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'] },
+    { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'] }
+  ] },
+  { id: 'c1', name: 'Lukas Bauer', university: 'Technische Universität München', skills: ['Embedded C', 'PCB Design', 'RFID Systems', 'BLE'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300', projects: [
+    { title: 'BLE Sensor Mesh Network', description: 'Low-power mesh network for environmental monitoring using WE sensors.', tech: ['Embedded C', 'BLE 5.0', 'FreeRTOS', 'WSEN'] },
+    { title: 'RFID Access Control System', description: 'Campus access system with passive RFID tags and web dashboard.', tech: ['RFID', 'Node.js', 'React'] }
+  ] },
+  { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD', 'PCB Design'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300', projects: [
+    { title: 'DC-DC Converter Design', description: 'High-efficiency buck converter with Würth inductors, validated in Simulink.', tech: ['Simulink', 'RedExpert', 'KiCAD'] }
+  ] },
+  { id: 'c3', name: 'David Schmidt', university: 'KIT Karlsruhe', skills: ['Python', 'TensorFlow', 'IoT Telemetry', 'Data Analysis'], score: 98, stage: 'Saved', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300', saved: true, projects: [
+    { title: 'Predictive Maintenance Pipeline', description: 'ML model for predictive maintenance using IoT sensor telemetry.', tech: ['Python', 'TensorFlow', 'Pandas', 'MQTT'] },
+    { title: 'Signal Quality Classifier', description: 'Deep learning classifier for PCB signal integrity analysis.', tech: ['PyTorch', 'OpenCV', 'NumPy'] }
+  ] },
+  { id: 'c4', name: 'Elena Rostova', university: 'Freie Universität Berlin', skills: ['SolidWorks Pro', 'FEA Modeling', 'Thermodynamics', 'Project Management'], score: 91, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300', projects: [
+    { title: 'Vibration Dampening Housing', description: 'Custom enclosure design to reduce vibration impact on sensitive PCBs.', tech: ['SolidWorks', 'FEA', 'ANSYS'] }
+  ] },
+  { id: 'c5', name: 'Marcus Vance', university: 'Hochschule München', skills: ['React Native', 'BLE', 'WSEN Sensors', 'Embedded C'], score: 85, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300', projects: [
+    { title: 'Sensor Dashboard App', description: 'Cross-platform mobile app for real-time WSEN sensor data visualization.', tech: ['React Native', 'BLE', 'Chart.js'] }
+  ] },
+  { id: 'c6', name: 'Anna Müller', university: 'Technische Universität Stuttgart', skills: ['Signal Integrity', 'C++', 'Matlab', 'Data Analysis'], score: 72, stage: 'Interview Scheduled', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300', projects: [
+    { title: 'EMC Simulation Suite', description: 'Matlab-based tool for simulating electromagnetic compatibility of PCB layouts.', tech: ['Matlab', 'C++', 'Simulink'] }
+  ] }
 ];
 
 const DEFAULT_REGISTRATIONS: EventRegistration[] = [
@@ -367,7 +385,9 @@ export const db = {
       type: j.type,
       deadline: j.deadline,
       applicantsCount: j.applicantsCount,
-      status: j.status
+      status: j.status,
+      requiredSkills: j.requiredSkills,
+      applicantNames: j.applicantNames || []
     }));
   },
 
@@ -497,25 +517,29 @@ export const db = {
   },
 
   // --- MATCHING ALGORITHM ---
-  calculateMatchScore(student: Candidate, job: UnifiedJob): number {
+  calculateMatchScore(student: Candidate, job: UnifiedJob): { score: number; matchedSkills: string[]; totalRequired: number } {
     const studentSkills = student.skills.map(s => s.toLowerCase().trim());
     const jobSkills = (job.requiredSkills || []).map(s => s.toLowerCase().trim());
     
     if (jobSkills.length === 0) {
-      return student.score; // Fallback to candidate's general score
+      return { score: student.score, matchedSkills: [], totalRequired: 0 };
     }
 
     // Match exact or contains
-    const matchingSkills = studentSkills.filter(s => 
-      jobSkills.some(js => js.includes(s) || s.includes(js))
+    const matchingSkills = jobSkills.filter(js => 
+      studentSkills.some(s => js.includes(s) || s.includes(js))
     );
 
-    const skillMatchPercentage = (matchingSkills.length / jobSkills.length) * 100;
+    const skillMatchFraction = jobSkills.length > 0 ? (matchingSkills.length / jobSkills.length) : 0;
     
-    // Weighted match: 60% skills, 40% candidate general engagement score
-    const weightedScore = (skillMatchPercentage * 0.6) + (student.score * 0.4);
+    // Matching Score = 0.6 * (Skill Match * 100) + 0.4 * Engagement Score
+    const weightedScore = (skillMatchFraction * 100 * 0.6) + (student.score * 0.4);
     
-    return Math.min(Math.round(weightedScore), 100);
+    return {
+      score: Math.min(Math.round(weightedScore), 100),
+      matchedSkills: matchingSkills.map(s => s.charAt(0).toUpperCase() + s.slice(1)),
+      totalRequired: jobSkills.length
+    };
   },
 
   // --- COFFEE CHAT / NETWORK MATCHING ---
