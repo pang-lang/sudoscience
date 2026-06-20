@@ -11,7 +11,7 @@ import {
   VisaStamp,
   CoffeeChatInvite
 } from '../../types';
-import { 
+import {
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee,
   GraduationCap
 } from 'lucide-react';
@@ -255,15 +255,33 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
 
   // Coffee Chat Invites State with LocalStorage sync
   const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
+    const defaultInvites: CoffeeChatInvite[] = [
+      {
+        id: 'mock_invite_1',
+        candidateId: 'c_sarah_j',
+        managerName: 'Dr. Emily Chen',
+        managerDept: 'R&D Advanced Materials',
+        managerResearch: 'Investigating thermal dissipation in high-density PCBs.',
+        score: 92,
+        status: 'pending',
+        studentSharedProfile: false,
+        managerSharedProfile: true,
+        timestamp: 'Today, 09:41 AM'
+      }
+    ];
     const saved = localStorage.getItem('we_connect_chat_invites');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        let parsed = JSON.parse(saved);
+        if (!parsed.some((i: any) => i.id === 'mock_invite_1')) {
+          parsed = [...defaultInvites, ...parsed];
+        }
+        return parsed;
       } catch (e) {
         console.error(e);
       }
     }
-    return [];
+    return defaultInvites;
   });
 
   useEffect(() => {
@@ -279,7 +297,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       if (e.key === 'we_connect_chat_invites' && e.newValue) {
         try {
           setInvites(JSON.parse(e.newValue));
-        } catch {}
+        } catch { }
       }
     };
     window.addEventListener('storage', handleStorage);

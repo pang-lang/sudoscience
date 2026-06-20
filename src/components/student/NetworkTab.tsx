@@ -195,15 +195,12 @@ export default function NetworkTab({
           managerDept: match.university || match.role,
           managerResearch: match.matchReason || match.description.slice(0, 80),
           score: match.projectMatchScore ?? 70,
-          status: 'accepted',
-          studentSharedProfile: false,
-          managerSharedProfile: true,
+          status: 'pending',
+          studentSharedProfile: true,
+          managerSharedProfile: false,
           timestamp: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
         };
         setInvites(prev => [newInvite, ...prev]);
-
-        setActiveChatId(chatId);
-        setSubTab('coffee');
       }
 
       setNetworkQueue(prev => prev.slice(1));
@@ -215,7 +212,7 @@ export default function NetworkTab({
 
   const handleAcceptInvite = (invite: CoffeeChatInvite) => {
     setInvites(prev => prev.map(inv =>
-      inv.id === invite.id ? { ...inv, status: 'accepted' } : inv
+      inv.id === invite.id ? { ...inv, status: 'accepted', studentSharedProfile: true } : inv
     ));
 
     const chatId = `chat_${invite.id}`;
@@ -235,6 +232,7 @@ export default function NetworkTab({
       setConnections(prev => [newChat, ...prev]);
       setActiveChatId(chatId);
     }
+    setSubTab('coffee');
     showToast("Coffee chat match accepted!");
   };
 
@@ -243,17 +241,6 @@ export default function NetworkTab({
       inv.id === inviteId ? { ...inv, status: 'rejected' } : inv
     ));
     showToast("Coffee chat invitation declined.");
-  };
-
-  const handleToggleStudentShare = (inviteId: string) => {
-    setInvites(prev => prev.map(inv => {
-      if (inv.id === inviteId) {
-        const next = !inv.studentSharedProfile;
-        showToast(next ? "Authorized CV profile access" : "Revoked CV profile access");
-        return { ...inv, studentSharedProfile: next };
-      }
-      return inv;
-    }));
   };
 
   // ── Derived state ─────────────────────────────────────────────────────────
@@ -446,109 +433,15 @@ export default function NetworkTab({
             </div>
           </div>
 
-          {/* Right: Active Connections & Chat */}
-          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm min-h-[510px] flex flex-col">
-            <div>
-              <h3 className="font-display font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 mb-4 tracking-tight flex items-center justify-between">
-                <span className="flex items-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
-                  Active Chats ({connections.length})
-                </span>
-                <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100 uppercase tracking-widest font-semibold">Online</span>
-              </h3>
-
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                {connections.length > 0 ? connections.map((chat) => {
-                  const inviteObj = invites.find(inv => `chat_${inv.id}` === chat.id || `coffee_${inv.candidateId}_${inv.id}` === chat.id);
-                  const displayName = (inviteObj && !inviteObj.managerSharedProfile)
-                    ? `Manager (${inviteObj.managerDept.split(' ')[0]})`
-                    : chat.name;
-
-                  return (
-                    <div
-                      key={chat.id}
-                      onClick={() => setActiveChatId(chat.id)}
-                      className={`p-3 rounded-2xl flex items-center gap-3 transition cursor-pointer border ${activeChatId === chat.id
-                          ? 'bg-slate-100/70 border-slate-300'
-                          : 'bg-slate-50 border-transparent hover:bg-slate-100/40'
-                        }`}
-                    >
-                      <div className="relative shrink-0">
-                        <img className="w-10 h-10 rounded-xl object-cover" src={chat.imageUrl} alt={chat.name} referrerPolicy="no-referrer" />
-                        {chat.online && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-white" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline">
-                          <h4 className="text-xs font-bold text-slate-950 truncate">{displayName}</h4>
-                          <span className="text-[9px] font-mono text-slate-400 shrink-0">Online</span>
-                        </div>
-                        <p className="text-[11px] text-red-600 font-medium truncate mt-0.5">{chat.role}</p>
-                        <p className="text-[10px] text-slate-400 truncate mt-1">{chat.lastMessage}</p>
-                      </div>
-                    </div>
-                  );
-                }) : (
-                  <p className="text-xs text-slate-400 text-center py-6">Unlock a coffee chat to start messaging.</p>
-                )}
-              </div>
-            </div>
-
-            {/* Chat input */}
-            <div className="mt-4 pt-4 border-t border-slate-100 flex-1 flex flex-col justify-end bg-slate-50/50 rounded-2xl p-3 min-h-[180px]">
-              {activeChatId ? (
-                <div className="flex flex-col justify-between h-full">
-                  <div className="flex-1 overflow-y-auto space-y-2 mb-3 max-h-[140px] p-1 pr-2">
-                    {connections.find(c => c.id === activeChatId)?.messages.map((m, i) => (
-                      <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                        <span className={`px-3 py-1.5 text-xs rounded-xl max-w-[85%] leading-relaxed ${m.sender === 'user'
-                            ? 'bg-slate-900 text-white rounded-tr-none'
-                            : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none'
-                          }`}>
-                          {m.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Type a message..."
-                      value={typedMessage}
-                      onChange={(e) => setTypedMessage(e.target.value)}
-                      onKeyDown={(e) => { if (e.key === 'Enter') sendChatMessage(); }}
-                      className="flex-1 bg-white border border-slate-200 px-3 py-1.5 rounded-lg text-xs focus:outline-none focus:border-red-500"
-                    />
-                    <button
-                      onClick={sendChatMessage}
-                      className="bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-1.5 rounded-lg transition shrink-0 cursor-pointer"
-                    >
-                      Send
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <p className="text-slate-400 text-xs text-center p-6">Select a conversation above to view messages.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── COFFEE CHAT DESK TAB ── */}
-      {subTab === 'coffee' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-
-          {/* Unlocked / Pending invites */}
-          <div className="lg:col-span-7 space-y-4">
-
-            {/* Pending invites from recruiters */}
-            {pendingInvites.length > 0 && (
-              <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
-                <h3 className="text-xs font-mono text-slate-400 uppercase tracking-widest font-semibold mb-4 flex items-center gap-1.5">
+          {/* Right: Pending Invites */}
+          <div className="lg:col-span-5 space-y-4">
+            {pendingInvites.length > 0 ? (
+              <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs h-[510px] flex flex-col">
+                <h3 className="text-xs font-mono text-slate-400 uppercase tracking-widest font-semibold mb-4 flex items-center gap-1.5 shrink-0">
                   <Coffee className="w-4 h-4 text-red-600" />
-                  Incoming Coffee Chat Requests ({pendingInvites.length})
+                  Pending Coffee Chats ({pendingInvites.length})
                 </h3>
-                <div className="space-y-4">
+                <div className="space-y-4 overflow-y-auto flex-1 pr-2">
                   {pendingInvites.map((invite) => (
                     <div
                       key={invite.id}
@@ -559,10 +452,10 @@ export default function NetworkTab({
                       <div className="flex justify-between items-start gap-4">
                         <div>
                           <span className="px-2 py-0.5 bg-red-50 text-red-600 font-mono text-[8px] uppercase tracking-wider rounded font-bold">
-                            Recruiter Sourcing
+                            {invite.studentSharedProfile ? 'Sent Request' : 'Recruiter Sourcing'}
                           </span>
                           <h4 className="font-display font-semibold text-sm text-slate-900 mt-2">
-                            Coffee Chat from {invite.managerName}
+                            Coffee Chat {invite.studentSharedProfile ? `with ${invite.managerName}` : `from ${invite.managerName}`}
                           </h4>
                           <div className="mt-3 space-y-1.5 text-[11px] text-slate-600">
                             <div>
@@ -585,168 +478,167 @@ export default function NetworkTab({
                       </div>
 
                       <div className="pt-3 border-t border-slate-200/80 flex items-center justify-between gap-3">
-                        <span className="text-[10px] text-slate-400 font-mono">Received: {invite.timestamp || 'Today'}</span>
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {invite.studentSharedProfile ? 'Sent:' : 'Received:'} {invite.timestamp || 'Today'}
+                        </span>
                         <div className="flex gap-2">
-                          <button
-                            onClick={() => handleDeclineInvite(invite.id)}
-                            className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold rounded-lg transition cursor-pointer"
-                          >
-                            Decline
-                          </button>
-                          <button
-                            onClick={() => handleAcceptInvite(invite)}
-                            className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition shadow-xs cursor-pointer"
-                          >
-                            Accept
-                          </button>
+                          {invite.studentSharedProfile ? (
+                            <span className="px-4 py-1.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-lg border border-slate-200">
+                              Pending Expert
+                            </span>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleDeclineInvite(invite.id)}
+                                className="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold rounded-lg transition cursor-pointer"
+                              >
+                                Decline
+                              </button>
+                              <button
+                                onClick={() => handleAcceptInvite(invite)}
+                                className="px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white text-[10px] font-bold rounded-lg transition shadow-xs cursor-pointer"
+                              >
+                                Accept & Share Profile
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
+            ) : (
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm min-h-[510px] flex flex-col items-center justify-center text-center">
+                  <Coffee className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                  <h4 className="text-xs font-bold text-slate-800">No pending requests</h4>
+                  <p className="text-[10px] text-slate-400 mt-1 max-w-[220px] mx-auto">
+                    When recruiters or experts request a chat with you, they will appear here.
+                  </p>
+              </div>
             )}
+          </div>
+        </div>
+      )}
 
-            {/* Accepted / Self-initiated coffee chats */}
-            <div className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs">
-              <h3 className="text-xs font-mono text-slate-400 uppercase tracking-widest font-semibold mb-4 flex items-center gap-1.5">
-                <Check className="w-4 h-4 text-emerald-500" />
-                Active Coffee Chats ({acceptedInvites.length})
-              </h3>
+      {/* ── COFFEE CHAT DESK TAB ── */}
+      {subTab === 'coffee' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Left: Active Connections List */}
+          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm h-[510px] flex flex-col">
+            <h3 className="font-display font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 mb-4 tracking-tight flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
+                My Connections ({connections.length})
+              </span>
+              <span className="text-[10px] font-mono bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded border border-emerald-100 uppercase tracking-widest font-semibold">Online</span>
+            </h3>
 
-              {acceptedInvites.length > 0 ? (
-                <div className="space-y-3">
-                  {acceptedInvites.map((inv) => (
-                    <div
-                      key={inv.id}
-                      className="p-4 border border-slate-200 rounded-2xl bg-slate-50 flex flex-col gap-3 relative overflow-hidden"
-                    >
-                      <div className="absolute top-0 bottom-0 left-0 bg-emerald-500 w-1 rounded-l-2xl" />
+            <div className="space-y-2 flex-1 overflow-y-auto pr-1">
+              {connections.length > 0 ? connections.map((chat) => {
+                const inviteObj = invites.find(inv => `chat_${inv.id}` === chat.id || `coffee_${inv.candidateId}_${inv.id}` === chat.id || `coffee_${inv.id}` === chat.id);
+                const displayName = (inviteObj && !inviteObj.managerSharedProfile)
+                  ? `Manager (${inviteObj.managerDept.split(' ')[0]})`
+                  : chat.name;
 
-                      {/* Match context banner */}
-                      {inv.managerResearch && (
-                        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-xl p-2.5 flex items-start gap-2">
-                          <Briefcase className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
-                          <p className="text-[10px] text-amber-800 leading-snug font-medium">
-                            {inv.managerResearch}
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-                          <Coffee className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="text-xs font-bold text-slate-950 truncate leading-tight">
-                            {inv.managerSharedProfile ? inv.managerName : `${inv.managerDept.split(' ')[0]} Expert`}
-                          </h4>
-                          <p className="text-[11px] text-slate-500 truncate mt-0.5">{inv.managerDept}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className={`text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border ${scoreBadgeClass(inv.score)}`}>
-                              {inv.score}% match
-                            </span>
-                            <span className="text-[9px] text-slate-400 font-mono">{inv.timestamp}</span>
-                          </div>
-                        </div>
+                return (
+                  <div
+                    key={chat.id}
+                    onClick={() => setActiveChatId(chat.id)}
+                    className={`p-3 rounded-2xl flex flex-col gap-2 transition cursor-pointer border ${activeChatId === chat.id
+                        ? 'bg-slate-100/70 border-slate-300'
+                        : 'bg-slate-50 border-transparent hover:bg-slate-100/40'
+                      }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        <img className="w-10 h-10 rounded-xl object-cover" src={chat.imageUrl} alt={chat.name} referrerPolicy="no-referrer" />
+                        {chat.online && <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-500 border border-white" />}
                       </div>
-
-                      {!inv.managerSharedProfile && (
-                        <div className="bg-amber-50 border border-amber-100 text-amber-800 rounded-lg p-2 flex items-center gap-1.5 text-[9px] font-mono">
-                          <Lock className="w-3 h-3 text-amber-600 shrink-0" />
-                          <span>Contact details masked until both profiles are shared.</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-baseline">
+                          <h4 className="text-xs font-bold text-slate-950 truncate">{displayName}</h4>
+                          <span className="text-[9px] font-mono text-slate-400 shrink-0">{chat.messages.length > 0 ? chat.messages[chat.messages.length-1].timestamp : 'Online'}</span>
                         </div>
-                      )}
-
-                      <div className="pt-2 border-t border-slate-200 flex flex-wrap gap-2 justify-between items-center">
-                        <button
-                          onClick={() => handleToggleStudentShare(inv.id)}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-bold transition flex items-center gap-1 cursor-pointer ${inv.studentSharedProfile
-                              ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                              : 'bg-slate-200 hover:bg-slate-300 text-slate-700 border border-slate-300'
-                            }`}
-                        >
-                          {inv.studentSharedProfile
-                            ? <><Unlock className="w-3 h-3" /> CV Shared</>
-                            : <><Lock className="w-3 h-3" /> Share My CV</>}
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            const chatId = connections.find(c =>
-                              c.name === inv.managerName || c.id.includes(inv.id)
-                            )?.id;
-                            if (chatId) {
-                              setActiveChatId(chatId);
-                              setSubTab('matches');
-                            }
-                          }}
-                          className="text-[10px] text-red-600 font-bold hover:text-red-700 flex items-center gap-0.5 cursor-pointer"
-                        >
-                          Open Chat <ChevronRight className="w-3.5 h-3.5" />
-                        </button>
+                        <p className="text-[11px] text-red-600 font-medium truncate mt-0.5">{chat.role}</p>
+                        <p className="text-[10px] text-slate-400 truncate mt-1">{chat.lastMessage}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="py-12 text-center border border-dashed border-slate-200 rounded-2xl">
-                  <Coffee className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <h4 className="text-xs font-bold text-slate-800">No coffee chats yet</h4>
-                  <p className="text-[10px] text-slate-400 mt-1 max-w-[220px] mx-auto">
-                    Go to <strong>Employee Matches</strong> and swipe right on someone you'd like to chat with!
-                  </p>
-                  <button
-                    onClick={() => setSubTab('matches')}
-                    className="mt-4 px-4 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition mx-auto"
-                  >
-                    <Target className="w-3.5 h-3.5" />
-                    Browse Matches
-                  </button>
+                    {inviteObj && inviteObj.managerResearch && (
+                       <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 rounded-lg p-2 mt-1">
+                         <div className="flex items-start gap-1.5">
+                           <Briefcase className="w-3 h-3 text-amber-500 mt-0.5 shrink-0" />
+                           <p className="text-[9px] text-amber-800 leading-snug font-medium">
+                             {inviteObj.managerResearch}
+                           </p>
+                         </div>
+                       </div>
+                    )}
+                  </div>
+                );
+              }) : (
+                <div className="flex flex-col items-center justify-center text-center h-full text-slate-400 space-y-3">
+                  <Coffee className="w-8 h-8 opacity-50" />
+                  <p className="text-xs">Unlock a coffee chat to start messaging.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right: Matches history + consent */}
-          <div className="lg:col-span-5 bg-white rounded-3xl border border-slate-200 p-5 shadow-xs min-h-[350px] flex flex-col">
-            <div className="flex-1">
-              <h3 className="font-display font-bold text-sm text-slate-900 border-b border-slate-100 pb-3 mb-4 tracking-tight flex items-center justify-between">
-                <span>Chat History ({acceptedInvites.length})</span>
-                <span className="text-[9px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200 uppercase tracking-widest font-semibold">Privacy Desk</span>
-              </h3>
-
-              {acceptedInvites.length > 0 ? (
-                <div className="space-y-3">
-                  {acceptedInvites.map(inv => (
-                    <div key={inv.id} className="p-3 border border-slate-100 rounded-xl bg-slate-50/50 flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
-                        <Coffee className="w-4 h-4 text-red-500" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[11px] font-bold text-slate-900 truncate">
-                          {inv.managerSharedProfile ? inv.managerName : `${inv.managerDept.split(' ')[0]} Expert`}
-                        </p>
-                        <p className="text-[9px] text-slate-400 font-mono mt-0.5">{inv.timestamp} · {inv.score}% match</p>
-                      </div>
-                      <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded shrink-0">
-                        Active
+          {/* Right: Chat Interface */}
+          <div className="lg:col-span-7 bg-white rounded-3xl border border-slate-200 p-6 shadow-sm h-[510px] flex flex-col">
+            {activeChatId ? (
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <img className="w-12 h-12 rounded-xl object-cover" src={connections.find(c => c.id === activeChatId)?.imageUrl} alt="" referrerPolicy="no-referrer" />
+                    <div>
+                      <h4 className="font-display font-bold text-slate-900">{connections.find(c => c.id === activeChatId)?.name}</h4>
+                      <p className="text-xs text-red-600 font-medium">{connections.find(c => c.id === activeChatId)?.role}</p>
+                    </div>
+                  </div>
+                  <div className="text-[10px] font-mono bg-emerald-50 text-emerald-600 px-2 py-1 rounded border border-emerald-100 flex items-center gap-1.5">
+                    <Unlock className="w-3 h-3" /> CV Shared
+                  </div>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+                  {connections.find(c => c.id === activeChatId)?.messages.map((m, i) => (
+                    <div key={i} className={`flex flex-col ${m.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                      <span className={`px-4 py-2 text-sm rounded-2xl max-w-[80%] leading-relaxed ${m.sender === 'user'
+                          ? 'bg-slate-900 text-white rounded-tr-none'
+                          : 'bg-slate-100 border border-slate-200 text-slate-800 rounded-tl-none'
+                        }`}>
+                        {m.text}
                       </span>
+                      <span className="text-[9px] text-slate-400 mt-1 px-1">{m.timestamp}</span>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="py-10 text-center text-slate-400 text-xs">
-                  No history yet.
+                <div className="flex gap-3 mt-auto pt-4 border-t border-slate-100">
+                  <input
+                    type="text"
+                    placeholder="Type your message..."
+                    value={typedMessage}
+                    onChange={(e) => setTypedMessage(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') sendChatMessage(); }}
+                    className="flex-1 bg-slate-50 border border-slate-200 px-4 py-2.5 rounded-xl text-sm focus:outline-none focus:border-red-500 focus:bg-white transition"
+                  />
+                  <button
+                    onClick={sendChatMessage}
+                    className="bg-red-600 hover:bg-red-700 text-white font-bold px-6 py-2.5 rounded-xl transition cursor-pointer flex items-center gap-2"
+                  >
+                    Send
+                  </button>
                 </div>
-              )}
-            </div>
-
-            <div className="mt-4 pt-3 border-t border-slate-100">
-              <p className="text-[10px] text-slate-400 leading-tight font-sans">
-                🔒 Your profile is shared only when you explicitly grant access. You can revoke at any time.
-              </p>
-            </div>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center text-center h-full text-slate-400 space-y-3">
+                <MessageSquare className="w-12 h-12 opacity-30" />
+                <p className="text-sm font-medium text-slate-600">No Conversation Selected</p>
+                <p className="text-xs">Select a connection on the left to start chatting.</p>
+              </div>
+            )}
           </div>
         </div>
       )}
