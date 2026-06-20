@@ -90,48 +90,58 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   useEffect(() => {
     async function loadData() {
       // 1. Fetch Candidates from Supabase
-      const { data: candidatesData } = await supabase.from('candidates').select('*');
-      if (candidatesData && candidatesData.length > 0) {
-        const mappedCandidates = candidatesData.map((c: any) => ({
-          id: c.id,
-          name: c.name,
-          university: c.university,
-          skills: c.skills || [],
-          score: c.score || c.engagementScore || 85,
-          stage: c.stage || 'Talent Pool',
-          avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-          saved: c.saved || false
-        }));
-        
-        // Save to our local unified DB first
-        db.saveCandidates(mappedCandidates);
+      try {
+        const { data: candidatesData, error } = await supabase.from('candidates').select('*');
+        if (error) throw error;
+        if (candidatesData && candidatesData.length > 0) {
+          const mappedCandidates = candidatesData.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            university: c.university,
+            skills: c.skills || [],
+            score: c.score || c.engagementScore || 85,
+            stage: c.stage || 'Talent Pool',
+            avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+            saved: c.saved || false
+          }));
+          
+          // Save to our local unified DB first
+          db.saveCandidates(mappedCandidates);
+        }
+      } catch (e) {
+        console.warn('Could not fetch candidates from Supabase, using local db cache:', e);
       }
       
       // Load candidates from db.ts to preserve local sync (e.g. Sarah Jenkins' visa stamps & updated score)
       setCandidates(db.getCandidates());
 
       // 2. Fetch Postings from Supabase
-      const { data: jobsData } = await supabase.from('opportunities').select('*');
-      if (jobsData && jobsData.length > 0) {
-        const mappedJobs = jobsData.map((o: any) => {
-          const existing = db.getJobs().find(old => old.id === o.id);
-          return {
-            id: o.id,
-            title: o.title,
-            company: o.company || 'Würth Elektronik',
-            location: o.location || 'Munich, Germany',
-            type: o.type,
-            starts: o.starts || 'ASAP',
-            deadline: o.deadline || 'Rolling',
-            countdown: o.countdown || 'Apply Early',
-            description: o.description || '',
-            logoColor: o.logo_color || o.logoColor || 'from-red-600 to-slate-900',
-            requiredSkills: existing ? existing.requiredSkills : (o.required_skills || ['Project Management']),
-            status: o.status || 'Active',
-            applicantsCount: o.applicants_count || o.applicantsCount || 0
-          };
-        });
-        db.saveJobs(mappedJobs);
+      try {
+        const { data: jobsData, error } = await supabase.from('opportunities').select('*');
+        if (error) throw error;
+        if (jobsData && jobsData.length > 0) {
+          const mappedJobs = jobsData.map((o: any) => {
+            const existing = db.getJobs().find(old => old.id === o.id);
+            return {
+              id: o.id,
+              title: o.title,
+              company: o.company || 'Würth Elektronik',
+              location: o.location || 'Munich, Germany',
+              type: o.type,
+              starts: o.starts || 'ASAP',
+              deadline: o.deadline || 'Rolling',
+              countdown: o.countdown || 'Apply Early',
+              description: o.description || '',
+              logoColor: o.logo_color || o.logoColor || 'from-red-600 to-slate-900',
+              requiredSkills: existing ? existing.requiredSkills : (o.required_skills || ['Project Management']),
+              status: o.status || 'Active',
+              applicantsCount: o.applicants_count || o.applicantsCount || 0
+            };
+          });
+          db.saveJobs(mappedJobs);
+        }
+      } catch (e) {
+        console.warn('Could not fetch opportunities from Supabase, using local db cache:', e);
       }
       setPostings(db.getRecruiterPostings());
     }
@@ -219,21 +229,26 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       });
       showToast(`Advanced ${candidate.name} to "${nextStage}"`);
       
-      // Supabase persist
-      const { error } = await supabase
-        .from('candidates')
-        .update({ stage: nextStage })
-        .eq('id', id);
-        
-      if (error) {
-        console.error('Error updating stage in Supabase:', error);
-        showToast(`Failed to save stage for ${candidate.name}`);
-        // Revert on error
-        setCandidates(prev => {
-          const next = prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c);
-          db.saveCandidates(next);
-          return next;
-        });
+      // Supabase persist with try-catch fallback
+      try {
+        const { error } = await supabase
+          .from('candidates')
+          .update({ stage: nextStage })
+          .eq('id', id);
+          
+        if (error) {
+          console.error('Error updating stage in Supabase:', error);
+          showToast(`Failed to save stage for ${candidate.name}`);
+          // Revert on error
+          setCandidates(prev => {
+            const next = prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c);
+            db.saveCandidates(next);
+            return next;
+          });
+        }
+      } catch (e) {
+        console.warn('Exception while updating candidate stage in Supabase:', e);
+        // We do NOT revert local state on connection exceptions so developer can test sandbox flows offline.
       }
     }
   };
