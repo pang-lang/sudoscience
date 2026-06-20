@@ -11,13 +11,8 @@ import {
   VisaStamp,
   CoffeeChatInvite
 } from '../../types';
-<<<<<<< Updated upstream
-import {
-  Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles
-=======
 import { 
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee
->>>>>>> Stashed changes
 } from 'lucide-react';
 
 import PassportTab from './PassportTab';
@@ -34,25 +29,6 @@ interface StudentPortalProps {
 
 export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // ---- MOCK DATA INITIALIZATION ----
-<<<<<<< Updated upstream
-
-  // Profile State
-  const [profile, setProfile] = useState<StudentProfile>({
-    name: 'Sarah Jenkins',
-    institution: 'Munich University of Applied Sciences',
-    degree: 'M.Sc. Mechanical Engineering',
-    engagementScore: 85,
-    status: 'Industry Ready',
-    skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'],
-    certifications: [
-      { name: 'Certified SolidWorks Associate', issuer: 'Dassault Systèmes', date: 'Jan 2023' },
-      { name: 'Lean Six Sigma Yellow Belt', issuer: 'WE Academy', date: 'Nov 2022' }
-    ],
-    stamps: [
-      { id: 'v1', name: "Tech Summit '23", date: 'Oct 2023', icon: '🚀' },
-      { id: 'v2', name: 'Career Fair', date: 'Apr 24', icon: '💼' }
-    ]
-=======
   
   // Profile State with LocalStorage sync
   const [profile, setProfile] = useState<StudentProfile>(() => {
@@ -80,7 +56,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
         { id: 'v2', name: 'Career Fair', date: 'Apr 24', icon: '💼' }
       ]
     };
->>>>>>> Stashed changes
   });
 
   useEffect(() => {
@@ -322,13 +297,8 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   }, [invites]);
 
   // ---- APP WINDOW STATE RENDERING ----
-<<<<<<< Updated upstream
-  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
-
-=======
   const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket' | 'coffee-chat'>('passport');
   
->>>>>>> Stashed changes
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -431,9 +401,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             </div>
           </button>
 
-<<<<<<< Updated upstream
-          <button
-=======
           <button 
             id="tab-coffee-chat"
             onClick={() => setCurrentTab('coffee-chat')}
@@ -452,8 +419,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             )}
           </button>
 
-          <button 
->>>>>>> Stashed changes
+          <button
             id="tab-network"
             onClick={() => setCurrentTab('network')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'network' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
@@ -569,14 +535,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           )}
 
           {currentTab === 'network' && (
-<<<<<<< Updated upstream
-            <NetworkTab
-              networkQueue={networkQueue}
-              setNetworkQueue={setNetworkQueue}
-              connections={connections}
-              setConnections={setConnections}
-              showToast={showToast}
-=======
             <NetworkTab 
               networkQueue={networkQueue} 
               setNetworkQueue={setNetworkQueue} 
@@ -596,7 +554,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
               setConnections={setConnections}
               showToast={showToast}
               setCurrentTab={setCurrentTab}
->>>>>>> Stashed changes
             />
           )}
 
