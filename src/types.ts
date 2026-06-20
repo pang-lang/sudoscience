@@ -148,3 +148,17 @@ export interface CapstoneProject {
   teamCount: number;
   sharedWithWE: boolean;
 }
+
+export interface CoffeeChatInvite {
+  id: string;
+  candidateId: string;
+  managerName: string;
+  managerDept: string;
+  managerResearch: string;
+  score: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  studentSharedProfile: boolean;
+  managerSharedProfile: boolean;
+  timestamp: string;
+}
+

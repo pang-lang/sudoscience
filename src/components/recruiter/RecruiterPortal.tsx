@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Candidate, 
-  PostedOpportunity
+import {
+  Candidate,
+  PostedOpportunity,
+  CoffeeChatInvite
 } from '../../types';
-import { 
+import {
   Briefcase, Search, BarChart3, Users, Sparkles
 } from 'lucide-react';
 
@@ -19,16 +20,70 @@ interface RecruiterPortalProps {
 
 export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // ---- DATA ENGINE INITIALIZATION ----
-  
-  // Candidates State
-  const [candidates, setCandidates] = useState<Candidate[]>([
-    { id: 'c1', name: 'Lukas Bauer', university: 'TU Munich', skills: ['Embedded C', 'PCB Design', 'RFID Systems'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300' },
-    { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300' },
-    { id: 'c3', name: 'David Schmidt', university: 'KIT Karlsruhe', skills: ['Python', 'TensorFlow', 'IoT Telemetry'], score: 98, stage: 'Saved', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300', saved: true },
-    { id: 'c4', name: 'Elena Rostova', university: 'Technical Institute of Berlin', skills: ['SolidWorks Pro', 'FEA', 'Thermodynamics'], score: 91, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300' },
-    { id: 'c5', name: 'Marcus Vance', university: 'Munich Applied Sciences', skills: ['React Native', 'BLE', 'WSEN Sensors'], score: 85, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' },
-    { id: 'c6', name: 'Anna Müller', university: 'TU Stuttgart', skills: ['Signal Integrity', 'C++', 'Matlab'], score: 72, stage: 'Interview Scheduled', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300' }
-  ]);
+
+  // Candidates State with LocalStorage sync
+  const [candidates, setCandidates] = useState<Candidate[]>(() => {
+    const saved = localStorage.getItem('we_connect_candidates');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [
+      { id: 'c_sarah_j', name: 'Sarah Jenkins', university: 'LUDWIG MAXIMILIANS UNIVERSITÄT', skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'], score: 85, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300' },
+      { id: 'c1', name: 'Lukas Bauer', university: 'Technische Universität Muünchen', skills: ['Embedded C', 'PCB Design', 'RFID Systems'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300' },
+      { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300' },
+      { id: 'c3', name: 'David Schmidt', university: 'KIT Karlsruhe', skills: ['Python', 'TensorFlow', 'IoT Telemetry'], score: 98, stage: 'Saved', avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=300', saved: true },
+      { id: 'c4', name: 'Elena Rostova', university: 'Frei Universität Berlin', skills: ['SolidWorks Pro', 'FEA', 'Thermodynamics'], score: 91, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300' },
+      { id: 'c5', name: 'Marcus Vance', university: 'Hochschule München', skills: ['React Native', 'BLE', 'WSEN Sensors'], score: 85, stage: 'Recruiter Review', avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300' },
+      { id: 'c6', name: 'Anna Müller', university: 'Technische Universität Stuttgart', skills: ['Signal Integrity', 'C++', 'Matlab'], score: 72, stage: 'Interview Scheduled', avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=300' }
+    ];
+  });
+
+  // Coffee Chat Invites state with LocalStorage sync
+  const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
+    const saved = localStorage.getItem('we_connect_chat_invites');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  });
+
+  // Manager Profile settings
+  const [managerProfile, setManagerProfile] = useState<{ name: string, dept: string, research: string }>(() => {
+    const saved = localStorage.getItem('we_connect_manager_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return {
+      name: 'Dr. Thomas Wey',
+      dept: 'R&D Systems & EMC',
+      research: 'Low-Power RFID Tag Sensors & Passive Wireless Power'
+    };
+  });
+
+  // Sync state modifications to localStorage
+  useEffect(() => {
+    localStorage.setItem('we_connect_candidates', JSON.stringify(candidates));
+  }, [candidates]);
+
+  useEffect(() => {
+    localStorage.setItem('we_connect_chat_invites', JSON.stringify(invites));
+  }, [invites]);
+
+  useEffect(() => {
+    localStorage.setItem('we_connect_manager_profile', JSON.stringify(managerProfile));
+  }, [managerProfile]);
 
   // Posted Job Postings
   const [postings, setPostings] = useState<PostedOpportunity[]>([
@@ -67,12 +122,12 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   };
 
   return (
-    <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
-      
+    <div id="recruiter-portal-root" className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
+
       {/* Toast Overlay */}
       <AnimatePresence>
         {toast && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -86,7 +141,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
       {/* --- SIDEBAR NAVIGATION --- */}
       <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
-        
+
         {/* Brand layout block */}
         <div className="p-6 border-b border-slate-900">
           <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={() => setCurrentTab('dashboard')}>
@@ -108,13 +163,12 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         </div>
 
         {/* Navigation Sidebar list */}
-        <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          <button 
+        <div className="flex-1 px-3 py-2 space-y-1">
+          <button
             id="tab-recruiter-dashboard"
             onClick={() => setCurrentTab('dashboard')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'dashboard' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'dashboard' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <BarChart3 className="w-4 h-4" />
@@ -122,12 +176,11 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             </div>
           </button>
 
-          <button 
+          <button
             id="tab-recruiter-discovery"
             onClick={() => setCurrentTab('discovery')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'discovery' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'discovery' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Search className="w-4 h-4" />
@@ -136,12 +189,11 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             <span className="text-[10px] bg-red-600/15 text-red-400 px-1.5 py-0.5 rounded-sm font-mono">+240</span>
           </button>
 
-          <button 
+          <button
             id="tab-recruiter-pipeline"
             onClick={() => setCurrentTab('pipeline')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'pipeline' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'pipeline' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Users className="w-4 h-4" />
@@ -150,12 +202,11 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             <span className="text-[10px] bg-slate-800 font-mono text-slate-400 px-1 rounded-sm">{candidates.length}</span>
           </button>
 
-          <button 
+          <button
             id="tab-recruiter-opportunities"
             onClick={() => setCurrentTab('opportunities')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'opportunities' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'opportunities' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Briefcase className="w-4 h-4" />
@@ -167,10 +218,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
         {/* Swap role back to Student sandbox */}
         <div className="p-4 border-t border-slate-900 space-y-2">
-          <button 
+          <button
             onClick={() => {
               showToast("Switched Sandbox to Student Portal");
-              window.location.hash = "#student"; 
+              window.location.hash = "#student";
               window.location.reload();
             }}
             className="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer"
@@ -179,7 +230,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             SWAP TO STUDENT
           </button>
 
-          <button 
+          <button
             onClick={onLogout}
             className="w-full py-1.5 hover:bg-red-950 hover:text-red-400 text-slate-500 font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1 border border-transparent cursor-pointer"
           >
@@ -190,7 +241,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
       {/* --- MAIN PAGE VIEW --- */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Recruitment top header and portal information desk */}
         <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shrink-0">
           <div>
@@ -212,25 +263,29 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           )}
 
           {currentTab === 'discovery' && (
-            <DiscoveryTab 
-              candidates={candidates} 
-              setCandidates={setCandidates} 
-              showToast={showToast} 
+            <DiscoveryTab
+              candidates={candidates}
+              setCandidates={setCandidates}
+              showToast={showToast}
+              invites={invites}
+              setInvites={setInvites}
+              managerProfile={managerProfile}
+              setManagerProfile={setManagerProfile}
             />
           )}
 
           {currentTab === 'pipeline' && (
-            <PipelineTab 
-              candidates={candidates} 
-              transitionCandidateStage={transitionCandidateStage} 
+            <PipelineTab
+              candidates={candidates}
+              transitionCandidateStage={transitionCandidateStage}
             />
           )}
 
           {currentTab === 'opportunities' && (
-            <OpportunitiesTab 
-              postings={postings} 
-              setPostings={setPostings} 
-              showToast={showToast} 
+            <OpportunitiesTab
+              postings={postings}
+              setPostings={setPostings}
+              showToast={showToast}
             />
           )}
         </div>

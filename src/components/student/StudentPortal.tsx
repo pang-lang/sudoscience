@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   StudentProfile,
@@ -8,10 +8,16 @@ import {
   Opportunity,
   NetworkProfile,
   ConnectionChat,
-  VisaStamp
+  VisaStamp,
+  CoffeeChatInvite
 } from '../../types';
+<<<<<<< Updated upstream
 import {
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles
+=======
+import { 
+  Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee
+>>>>>>> Stashed changes
 } from 'lucide-react';
 
 import PassportTab from './PassportTab';
@@ -20,6 +26,7 @@ import LearningTab from './LearningTab';
 import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
+import CoffeeChatTab from './CoffeeChatTab';
 
 interface StudentPortalProps {
   onLogout: () => void;
@@ -27,6 +34,7 @@ interface StudentPortalProps {
 
 export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // ---- MOCK DATA INITIALIZATION ----
+<<<<<<< Updated upstream
 
   // Profile State
   const [profile, setProfile] = useState<StudentProfile>({
@@ -44,7 +52,40 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       { id: 'v1', name: "Tech Summit '23", date: 'Oct 2023', icon: '🚀' },
       { id: 'v2', name: 'Career Fair', date: 'Apr 24', icon: '💼' }
     ]
+=======
+  
+  // Profile State with LocalStorage sync
+  const [profile, setProfile] = useState<StudentProfile>(() => {
+    const saved = localStorage.getItem('we_connect_student_profile');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return {
+      name: 'Sarah Jenkins',
+      institution: 'Munich University of Applied Sciences',
+      degree: 'M.Sc. Mechanical Engineering',
+      engagementScore: 85,
+      status: 'Industry Ready',
+      skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'],
+      certifications: [
+        { name: 'Certified SolidWorks Associate', issuer: 'Dassault Systèmes', date: 'Jan 2023' },
+        { name: 'Lean Six Sigma Yellow Belt', issuer: 'WE Academy', date: 'Nov 2022' }
+      ],
+      stamps: [
+        { id: 'v1', name: "Tech Summit '23", date: 'Oct 2023', icon: '🚀' },
+        { id: 'v2', name: 'Career Fair', date: 'Apr 24', icon: '💼' }
+      ]
+    };
+>>>>>>> Stashed changes
   });
+
+  useEffect(() => {
+    localStorage.setItem('we_connect_student_profile', JSON.stringify(profile));
+  }, [profile]);
 
   // Projects State
   const [projects, setProjects] = useState<Project[]>([
@@ -219,39 +260,75 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     }
   ]);
 
-  // Active Chats State
-  const [connections, setConnections] = useState<ConnectionChat[]>([
-    {
-      id: 'c1',
-      name: 'Sarah Weber',
-      role: 'Senior Mechanical @ WE',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
-      online: true,
-      lastMessage: 'Let\'s schedule a technical review session on Thursday!',
-      messages: [
-        { sender: 'other', text: 'Hey Sarah! Loved your Smart Inventory Tracker layout.', timestamp: '10:30 AM' },
-        { sender: 'user', text: 'Thank you Sarah! I used the WSEN thermals and it worked beautifully.', timestamp: '10:32 AM' },
-        { sender: 'other', text: 'Let\'s schedule a technical review session on Thursday!', timestamp: '10:33 AM' }
-      ]
-    },
-    {
-      id: 'c2',
-      name: 'Marcus Chen',
-      role: 'Hardware Intern @ WE',
-      imageUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
-      online: false,
-      lastMessage: 'Good luck on your systems exam!',
-      messages: [
-        { sender: 'other', text: 'Are you attending the Scalability masterclass tomorrow?', timestamp: 'Yesterday' },
-        { sender: 'user', text: 'Yes, looking forward to it. Got my boarding pass ready.', timestamp: 'Yesterday' },
-        { sender: 'other', text: 'Good luck on your systems exam!', timestamp: 'Yesterday' }
-      ]
+  // Active Chats State with LocalStorage sync
+  const [connections, setConnections] = useState<ConnectionChat[]>(() => {
+    const saved = localStorage.getItem('we_connect_connections');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
     }
-  ]);
+    return [
+      {
+        id: 'c1',
+        name: 'Sarah Weber',
+        role: 'Senior Mechanical @ WE',
+        imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200',
+        online: true,
+        lastMessage: 'Let\'s schedule a technical review session on Thursday!',
+        messages: [
+          { sender: 'other', text: 'Hey Sarah! Loved your Smart Inventory Tracker layout.', timestamp: '10:30 AM' },
+          { sender: 'user', text: 'Thank you Sarah! I used the WSEN thermals and it worked beautifully.', timestamp: '10:32 AM' },
+          { sender: 'other', text: 'Let\'s schedule a technical review session on Thursday!', timestamp: '10:33 AM' }
+        ]
+      },
+      {
+        id: 'c2',
+        name: 'Marcus Chen',
+        role: 'Hardware Intern @ WE',
+        imageUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=200',
+        online: false,
+        lastMessage: 'Good luck on your systems exam!',
+        messages: [
+          { sender: 'other', text: 'Are you attending the Scalability masterclass tomorrow?', timestamp: 'Yesterday' },
+          { sender: 'user', text: 'Yes, looking forward to it. Got my boarding pass ready.', timestamp: 'Yesterday' },
+          { sender: 'other', text: 'Good luck on your systems exam!', timestamp: 'Yesterday' }
+        ]
+      }
+    ];
+  });
+
+  // Coffee Chat Invites State with LocalStorage sync
+  const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
+    const saved = localStorage.getItem('we_connect_chat_invites');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('we_connect_connections', JSON.stringify(connections));
+  }, [connections]);
+
+  useEffect(() => {
+    localStorage.setItem('we_connect_chat_invites', JSON.stringify(invites));
+  }, [invites]);
 
   // ---- APP WINDOW STATE RENDERING ----
+<<<<<<< Updated upstream
   const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
 
+=======
+  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket' | 'coffee-chat'>('passport');
+  
+>>>>>>> Stashed changes
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -354,7 +431,29 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             </div>
           </button>
 
+<<<<<<< Updated upstream
           <button
+=======
+          <button 
+            id="tab-coffee-chat"
+            onClick={() => setCurrentTab('coffee-chat')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+              currentTab === 'coffee-chat' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Coffee className="w-4 h-4" />
+              <span>Coffee Chat Desk</span>
+            </div>
+            {invites.filter(inv => inv.status === 'pending').length > 0 && (
+              <span className="text-[10px] font-mono bg-black/25 px-1.5 py-0.5 rounded text-white">
+                {invites.filter(inv => inv.status === 'pending').length}
+              </span>
+            )}
+          </button>
+
+          <button 
+>>>>>>> Stashed changes
             id="tab-network"
             onClick={() => setCurrentTab('network')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'network' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
@@ -470,12 +569,34 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           )}
 
           {currentTab === 'network' && (
+<<<<<<< Updated upstream
             <NetworkTab
               networkQueue={networkQueue}
               setNetworkQueue={setNetworkQueue}
               connections={connections}
               setConnections={setConnections}
               showToast={showToast}
+=======
+            <NetworkTab 
+              networkQueue={networkQueue} 
+              setNetworkQueue={setNetworkQueue} 
+              connections={connections} 
+              setConnections={setConnections} 
+              showToast={showToast} 
+              invites={invites}
+              setInvites={setInvites}
+            />
+          )}
+
+          {currentTab === 'coffee-chat' && (
+            <CoffeeChatTab 
+              invites={invites}
+              setInvites={setInvites}
+              connections={connections}
+              setConnections={setConnections}
+              showToast={showToast}
+              setCurrentTab={setCurrentTab}
+>>>>>>> Stashed changes
             />
           )}
 
