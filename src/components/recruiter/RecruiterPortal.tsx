@@ -294,39 +294,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       }
       return inv;
     }));
-=======
-  // Drag simulation / instant stage update helper with Supabase persistence
-  const transitionCandidateStage = async (id: string, dir: 'next' | 'prev') => {
-    const stages: Array<Candidate['stage']> = ['Talent Pool', 'Saved', 'Recruiter Review', 'Interview Scheduled'];
-    
-    // Find the candidate
-    const candidate = candidates.find(c => c.id === id);
-    if (!candidate) return;
-    
-    const curIdx = stages.indexOf(candidate.stage);
-    let nextIdx = curIdx + (dir === 'next' ? 1 : -1);
-    
-    if (nextIdx >= 0 && nextIdx < stages.length) {
-      const nextStage = stages[nextIdx];
-      
-      // Optimistic UI Update
-      setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage: nextStage } : c));
-      showToast(`Advanced ${candidate.name} to "${nextStage}"`);
-      
-      // Persist to Supabase
-      const { error } = await supabase
-        .from('candidates')
-        .update({ stage: nextStage })
-        .eq('id', id);
-        
-      if (error) {
-        console.error('Error updating stage:', error);
-        showToast(`Failed to save stage for ${candidate.name}`);
-        // Revert on error
-        setCandidates(prev => prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c));
-      }
-    }
->>>>>>> origin/main
   };
 
   const handleSendOffer = (candName: string) => {
