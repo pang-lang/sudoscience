@@ -137,7 +137,7 @@ export default function NetworkTab({
   const acceptedInvites = invites.filter(inv => inv.status === 'accepted');
 
   return (
-    <div id="view-network" className="max-w-5xl space-y-6">
+    <div id="view-network" className="max-w-7xl mx-auto w-full space-y-6">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-200 pb-5">
         <div>
           <h2 className="font-display font-bold text-2xl text-slate-900">WE Academic Matching Queue</h2>

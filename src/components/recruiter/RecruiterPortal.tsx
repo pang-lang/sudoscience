@@ -22,7 +22,7 @@ interface RecruiterPortalProps {
 export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // ---- DATA ENGINE INITIALIZATION ----
 
-  // Candidates State with LocalStorage sync
+  // Candidates State
   const [candidates, setCandidates] = useState<Candidate[]>([]);
 
   // Coffee Chat Invites state with LocalStorage sync
@@ -76,24 +76,25 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     async function loadData() {
       // Fetch Candidates
       const { data: candidatesData } = await supabase.from('candidates').select('*');
-      if (candidatesData && candidatesData.length > 0) {
+      if (candidatesData) {
         setCandidates(candidatesData.map((c: any) => ({
           ...c,
           avatarUrl: c.avatar_url // map snake_case to camelCase
         })));
-      } else {
-        // Fallback mock data if DB empty
-        setCandidates([
-          { id: 'c1', name: 'Lukas Bauer', university: 'Technische Universität München', skills: ['Embedded C', 'PCB Design', 'RFID Systems'], score: 94, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&q=80&w=300' },
-          { id: 'c2', name: 'Sarah Miller', university: 'RWTH Aachen', skills: ['Power Electronics', 'Simulink', 'CAD'], score: 88, stage: 'Talent Pool', avatarUrl: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&q=80&w=300' }
-        ]);
       }
       
-      // Fetch Postings (Mock fallback included)
-      setPostings([
-        { id: 'p1', title: 'Power Management Field Graduate', type: 'Graduate Program', deadline: 'Dec 01, 2024', applicantsCount: 24, status: 'Active' },
-        { id: 'p2', title: 'IoT Electromagnetic Shielding Intern', type: 'Internship', deadline: 'Oct 15, 2024', applicantsCount: 14, status: 'Active' }
-      ]);
+      // Fetch Postings
+      const { data: postingsData } = await supabase.from('opportunities').select('*');
+      if (postingsData) {
+        setPostings(postingsData.map((p: any) => ({
+          id: p.id,
+          title: p.title,
+          type: p.type,
+          deadline: p.deadline,
+          applicantsCount: Math.floor(Math.random() * 50), // Mock count since not in DB
+          status: 'Active'
+        })));
+      }
     }
     loadData();
   }, []);
@@ -144,7 +145,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   };
 
   return (
-    <div id="recruiter-portal-root" className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
+    <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
 
       {/* Toast Overlay */}
       <AnimatePresence>

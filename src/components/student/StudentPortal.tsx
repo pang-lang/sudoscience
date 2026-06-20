@@ -28,7 +28,7 @@ interface StudentPortalProps {
 }
 
 export default function StudentPortal({ onLogout }: StudentPortalProps) {
-  // ---- MOCK DATA INITIALIZATION ----
+  // ---- DATA STATE INITIALIZATION ----
   
   // Profile State with LocalStorage sync
   const [profile, setProfile] = useState<StudentProfile>(() => {
@@ -41,20 +41,14 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       }
     }
     return {
-      name: 'Sarah Jenkins',
-      institution: 'Munich University of Applied Sciences',
-      degree: 'M.Sc. Mechanical Engineering',
-      engagementScore: 85,
-      status: 'Industry Ready',
-      skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'],
-      certifications: [
-        { name: 'Certified SolidWorks Associate', issuer: 'Dassault Systèmes', date: 'Jan 2023' },
-        { name: 'Lean Six Sigma Yellow Belt', issuer: 'WE Academy', date: 'Nov 2022' }
-      ],
-      stamps: [
-        { id: 'v1', name: "Tech Summit '23", date: 'Oct 2023', icon: '🚀' },
-        { id: 'v2', name: 'Career Fair', date: 'Apr 24', icon: '💼' }
-      ]
+      name: '',
+      institution: '',
+      degree: '',
+      engagementScore: 0,
+      status: 'In Training',
+      skills: [],
+      certifications: [],
+      stamps: []
     };
   });
 
@@ -69,11 +63,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   const [events, setEvents] = useState<MasterclassEvent[]>([]);
 
   // Download Recordings / Docs
-  const [materials] = useState<LearningMaterial[]>([
-    { id: 'm1', fileName: 'Intro_to_RF_Design_CrashCourse.mp4', type: 'Video', durationOrSize: '1h 45m', uploadDate: 'Oct 10, 2024', views: 320, downloads: 145 },
-    { id: 'm2', fileName: 'Q3_Electromagnetic_Interference_Deck.pdf', type: 'Slide', durationOrSize: '4.2 MB', uploadDate: 'Oct 08, 2024', views: 512, downloads: 289 },
-    { id: 'm3', fileName: 'Industrial_Sensor_IoT_Boilerplate.zip', type: 'Code', durationOrSize: '12.0 MB', uploadDate: 'Oct 02, 2024', views: 189, downloads: 93 }
-  ]);
+  const [materials, setMaterials] = useState<LearningMaterial[]>([]);
 
   // Careers / Opportunities
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
@@ -81,97 +71,77 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // Supabase Data Fetcher
   useEffect(() => {
     async function loadData() {
-      // 1. Load Projects
+      // 1. Load Student Profile
+      const { data: profileData } = await supabase.from('student_profiles').select('*').limit(1);
+      if (profileData && profileData.length > 0) {
+        const p = profileData[0];
+        setProfile(prev => ({
+          ...prev,
+          name: p.name || prev.name,
+          institution: p.institution || prev.institution,
+          degree: p.degree || prev.degree,
+          engagementScore: p.engagement_score ?? prev.engagementScore,
+          status: p.status || prev.status,
+          skills: p.skills || prev.skills,
+        }));
+      }
+
+      // 2. Load Projects
       const { data: projData } = await supabase.from('projects').select('*');
-      if (projData && projData.length > 0) {
+      if (projData) {
         setProjects(projData.map((p: any) => ({
           ...p,
           imageUrl: p.image_url,
           codeUrl: p.code_url,
           demoUrl: p.demo_url
         })));
-      } else {
-        setProjects([
-          {
-            id: 'p1', title: 'Smart Inventory Tracker', description: 'An automated IoT inventory solution...',
-            tech: ['Python', 'MQTT', 'React'], components: ['RFID Tags'],
-            imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=400',
-            featured: true, codeUrl: '#', demoUrl: '#'
-          }
-        ]);
       }
 
-      // 2. Load Events
+      // 3. Load Events
       const { data: evtData } = await supabase.from('masterclass_events').select('*');
-      if (evtData && evtData.length > 0) {
+      if (evtData) {
         setEvents(evtData.map((e: any) => ({
           ...e,
           speakerTitle: e.speaker_title,
           attendeesCount: e.attendees_count
         })));
-      } else {
-        setEvents([
-          {
-            id: 'e1', title: 'Advanced Systems Architecture', speaker: 'Dr. Lukas Miller', speakerTitle: 'WE Chief Architect',
-            location: 'Innovation Hub, Berlin', date: 'Oct 15, 2024', time: '2:00 PM CEST', tag: 'Engineering',
-            attendeesCount: 42, registered: true, waitlisted: false
-          }
-        ]);
       }
 
-      // 3. Load Opportunities
+      // 4. Load Opportunities
       const { data: oppData } = await supabase.from('opportunities').select('*');
-      if (oppData && oppData.length > 0) {
+      if (oppData) {
         setOpportunities(oppData.map((o: any) => ({
           ...o,
           logoColor: o.logo_color
         })));
-      } else {
-        setOpportunities([
-          { id: 'o1', title: 'Advanced Robotics Engineering Intern', company: 'TechNova', location: 'Munich', type: 'Internship', starts: 'Oct 2024', deadline: 'Jul 30, 2024', countdown: '14 days left', description: '...', saved: false, applied: false, logoColor: 'bg-blue-600' }
-        ]);
+      }
+
+      // 5. Load Learning Materials
+      const { data: matData } = await supabase.from('learning_materials').select('*');
+      if (matData) {
+        setMaterials(matData.map((m: any) => ({
+          ...m,
+          fileName: m.file_name,
+          durationOrSize: m.duration_or_size,
+          uploadDate: m.upload_date
+        })));
+      }
+
+      // 6. Load Network Profiles
+      const { data: netData } = await supabase.from('network_profiles').select('*');
+      if (netData) {
+        setNetworkQueue(netData.map((n: any) => ({
+          ...n,
+          imageUrl: n.image_url
+        })));
       }
     }
     loadData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   // Network Stack / Tinder Swipe Cards
-  const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([
-    {
-      id: 'n1',
-      name: 'Sarah Weber',
-      age: 28,
-      role: 'Senior Mechanical Design Engineer',
-      university: 'Würth Elektronik GmbH',
-      tags: ['Senior Engineer', 'EMC Specialist', 'WE Mentor'],
-      skills: ['SolidWorks Pro', 'FEA Modeling', 'Thermal Dissipation', 'CAD Optimization'],
-      description: 'Hi Sarah! I specialize in mechanical housing shielding for EMI-critical boards. Super excited to mentor students bridging physical dynamics and signal integrity.',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300'
-    },
-    {
-      id: 'n2',
-      name: 'Elias K.',
-      age: 32,
-      role: 'Principal IoT Solutions Architect',
-      university: 'Würth Elektronik Expert',
-      tags: ['RFID Lead', 'Product Manager', 'Speaker'],
-      skills: ['RFID Hardware', 'NFC Design', 'Embedded Systems', 'MQTT Protocol'],
-      description: 'Specializing in passive tagging solutions and low-power sensory tags. Let me know if you need design assistance or components reviews for your RFID capstone projects!',
-      imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300'
-    },
-    {
-      id: 'n3',
-      name: 'Julian Vance',
-      age: 34,
-      role: 'University Talents Acquisition Lead',
-      university: 'Würth Elektronik HR',
-      tags: ['Recruiter Specialist', 'Careers Lead', 'Industry Coach'],
-      skills: ['Talent Sourcing', 'Interview Prep', 'Career Pathing'],
-      description: 'Looking to identify the brightest minds for our European innovation clinics. Chat with me regarding internships, working students spots, or master thesis topics!',
-      imageUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300'
-    }
-  ]);
+  const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([]);
 
   // Active Chats State with LocalStorage sync
   const [connections, setConnections] = useState<ConnectionChat[]>(() => {

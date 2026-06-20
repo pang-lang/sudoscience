@@ -35,46 +35,33 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
     async function loadData() {
       // Fetch Learning Materials
       const { data: matData } = await supabase.from('learning_materials').select('*');
-      if (matData && matData.length > 0) {
+      if (matData) {
         setMaterials(matData.map((m: any) => ({
           ...m,
           fileName: m.file_name,
           durationOrSize: m.duration_or_size,
           uploadDate: m.upload_date
         })));
-      } else {
-        setMaterials([
-          { id: 'm1', fileName: 'Q3_Engineering_Principles_Deck.pptx', type: 'Slide', durationOrSize: '4.8 MB', uploadDate: 'Oct 02, 2024', views: 84, downloads: 42 }
-        ]);
       }
 
       // Fetch Students
       const { data: stuData } = await supabase.from('student_performances').select('*');
-      if (stuData && stuData.length > 0) {
+      if (stuData) {
         setStudents(stuData.map((s: any) => ({
           ...s,
           resourcesAccessed: s.resources_accessed,
           questionsAsked: s.questions_asked
         })));
-      } else {
-        setStudents([
-          { id: 's1', name: 'Elena Rostova', course: 'ENG-101', attendance: 98, resourcesAccessed: 24, questionsAsked: 12, flagged: false },
-          { id: 's4', name: 'David Miller', course: 'ENG-101', attendance: 75, resourcesAccessed: 12, questionsAsked: 2, flagged: true }
-        ]);
       }
 
       // Fetch Capstones
       const { data: capData } = await supabase.from('capstone_projects').select('*');
-      if (capData && capData.length > 0) {
+      if (capData) {
         setCapstones(capData.map((c: any) => ({
           ...c,
           teamCount: c.team_count,
           sharedWithWE: c.shared_with_we
         })));
-      } else {
-        setCapstones([
-          { id: 'cp1', title: 'Sustainable Fastening Solutions', category: 'Engineering', description: 'Innovative screw-threaded design...', teamCount: 4, sharedWithWE: false }
-        ]);
       }
     }
     loadData();
