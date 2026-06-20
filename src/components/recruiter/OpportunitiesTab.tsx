@@ -173,7 +173,7 @@ export default function OpportunitiesTab({ postings, setPostings, showToast }: O
                     <td className="px-4 py-3.5">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
                         {(post.requiredSkills && post.requiredSkills.length > 0 ? post.requiredSkills : ['Project Management']).map((s, idx) => (
-                          <span key={idx} className="bg-slate-100 text-slate-650 px-1.5 py-0.5 rounded text-[9px] font-semibold font-mono tracking-wide">
+                          <span key={idx} className="bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded text-[9px] font-semibold font-mono tracking-wide">
                             {s}
                           </span>
                         ))}

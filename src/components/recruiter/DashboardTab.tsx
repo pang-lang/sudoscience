@@ -267,8 +267,8 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
             {/* Legend */}
             <div className="flex items-center gap-4 text-[10px] font-mono font-semibold text-slate-500 mb-6">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Guest Lectures</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Practical Workshops</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> Hackathons</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-slate-950 border border-slate-700" /> Practical Workshops</span>
+              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-white border border-slate-400" /> Hackathons</span>
             </div>
 
             {/* Chart Area */}
@@ -295,22 +295,22 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
                       {/* Lectures bar (red) */}
                       <div 
                         style={{ height: `${(d.lectures / 70) * 100}%` }}
-                        className="w-2 sm:w-3.5 rounded-t-xs bg-gradient-to-t from-red-500 to-red-400 transition-all duration-300 group-hover:scale-y-105 group-hover:brightness-110 shadow-sm"
+                        className="w-2 sm:w-3.5 rounded-t-xs bg-gradient-to-t from-red-600 to-red-500 transition-all duration-300 group-hover:scale-y-105 group-hover:brightness-110 shadow-sm"
                       />
-                      {/* Workshops bar (blue) */}
+                      {/* Workshops bar (black) */}
                       <div 
                         style={{ height: `${(d.workshops / 70) * 100}%` }}
-                        className="w-2 sm:w-3.5 rounded-t-xs bg-gradient-to-t from-blue-500 to-blue-400 transition-all duration-300 group-hover:scale-y-105 group-hover:brightness-110 shadow-sm"
+                        className="w-2 sm:w-3.5 rounded-t-xs bg-gradient-to-t from-slate-950 to-slate-800 transition-all duration-300 group-hover:scale-y-105 group-hover:brightness-110 shadow-sm"
                       />
-                      {/* Hackathons bar (emerald) */}
+                      {/* Hackathons bar (white) */}
                       <div 
                         style={{ height: `${(d.hackathons / 70) * 100}%` }}
-                        className="w-2 sm:w-3.5 rounded-t-xs bg-gradient-to-t from-emerald-500 to-emerald-400 transition-all duration-300 group-hover:scale-y-105 group-hover:brightness-110 shadow-sm"
+                        className="w-2 sm:w-3.5 rounded-t-xs bg-gradient-to-t from-slate-200 to-white border border-slate-300 transition-all duration-300 group-hover:scale-y-105 group-hover:brightness-110 shadow-xs"
                       />
                     </div>
 
                     {/* X Axis Label */}
-                    <span className="text-[10px] font-bold text-slate-650 font-mono mt-2 flex flex-col items-center">
+                    <span className="text-[10px] font-bold text-slate-600 font-mono mt-2 flex flex-col items-center">
                       {d.month}
                       {d.isPeak && <span className="text-[7px] text-red-500 font-bold -mt-0.5">PEAK</span>}
                     </span>
@@ -328,11 +328,11 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
                             <span className="font-bold">{d.lectures}</span>
                           </p>
                           <p className="flex justify-between items-center">
-                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-blue-500" /> Workshops:</span>
+                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-slate-950 border border-slate-700" /> Workshops:</span>
                             <span className="font-bold">{d.workshops}</span>
                           </p>
                           <p className="flex justify-between items-center">
-                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Hackathons:</span>
+                            <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-white border border-slate-400" /> Hackathons:</span>
                             <span className="font-bold">{d.hackathons}</span>
                           </p>
                           <div className="border-t border-slate-800 my-1 pt-1 flex justify-between items-center font-bold text-slate-300">
@@ -348,14 +348,14 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
             </div>
 
             {/* Insights Section */}
-            <div className="mt-6 bg-slate-50 border border-slate-150 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <div className="mt-6 bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col sm:flex-row gap-4 items-center justify-between">
               <div className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-xl bg-red-50 flex items-center justify-center text-red-600 shrink-0 mt-0.5">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-[10px] font-bold text-slate-900 uppercase tracking-wider font-mono">Engagement Diagnostics</h4>
-                  <p className="text-[11px] text-slate-650 mt-1 leading-relaxed">
+                  <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
                     1. <strong>Preferred Activity:</strong> Students show a strong preference for <strong>Practical Workshops</strong> (totaling 250+ entries).<br />
                     2. <strong>Peak Engagement:</strong> Seasonal analysis indicates <strong>July</strong> is the peak participation month (140 registrations).
                   </p>
@@ -415,7 +415,7 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
 
               <div 
                 onClick={() => setActiveSectionModal('funnel_mentorship')}
-                className="relative p-2.5 bg-slate-700 text-slate-350 rounded-xl text-xs flex justify-between items-center overflow-hidden max-w-[70%] mx-auto font-bold hover:bg-slate-650 transition-colors cursor-pointer group text-slate-100"
+                className="relative p-2.5 bg-slate-700 text-slate-300 rounded-xl text-xs flex justify-between items-center overflow-hidden max-w-[70%] mx-auto font-bold hover:bg-slate-600 transition-colors cursor-pointer group text-slate-100"
               >
                 <span className="font-semibold z-15 text-slate-100 flex items-center gap-1">
                   4. Direct Mentorship <ArrowUpRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-500 transition-colors" />
@@ -432,7 +432,7 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
                   5. Placement Pipeline <ArrowUpRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-red-600 transition-colors" />
                 </span>
                 <span className="font-mono z-15 font-bold text-slate-500 text-[10px]">{placementCount} students</span>
-                <div className="absolute left-0 top-0 bottom-0 bg-emerald-500 w-1" />
+                <div className="absolute left-0 top-0 bottom-0 bg-red-600 w-1" />
               </div>
             </div>
           </div>
@@ -491,7 +491,7 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
                         </div>
                         <p className="text-[10px] text-slate-500 mt-0.5 truncate max-w-[280px]">{candidate.university}</p>
                         {extraInfo && (
-                          <span className="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.2 bg-slate-200/60 rounded text-[9px] font-mono text-slate-650">
+                          <span className="inline-flex items-center gap-0.5 mt-1 px-1.5 py-0.2 bg-slate-200/60 rounded text-[9px] font-mono text-slate-600">
                             <CheckCircle className="w-2.5 h-2.5 text-emerald-600" />
                             {extraInfo}
                           </span>

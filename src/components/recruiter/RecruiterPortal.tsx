@@ -365,7 +365,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     };
 
     setInvites(prev => [...prev, newInvite]);
-    showToast(`Coffee Chat Invite dispatched to ${cand.name.split(' ')[0]} (Masked)`);
+    showToast(`Coffee Chat Invite dispatched to ${cand.name.split(' ')[0]}!`);
 
     if (cand.id !== 'c_sarah_j') {
       setTimeout(() => {
@@ -380,7 +380,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             return {
               ...inv,
               status: 'accepted' as const,
-              studentSharedProfile: Math.random() > 0.4
+              studentSharedProfile: true
             };
           }
           return inv;
@@ -426,7 +426,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
     : null;
 
-  const isProfileShared = activeInvite?.status === 'accepted' && activeInvite.studentSharedProfile;
+  const isProfileShared = activeInvite?.status === 'accepted';
   const isAnonymized = false;
 
   return (
@@ -512,7 +512,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           <button
             id="tab-recruiter-coffeechat"
             onClick={() => setCurrentTab('coffeechat')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'coffeechat' ? 'bg-slate-800 text-white border-l-4 border-amber-500' : 'hover:bg-slate-900 hover:text-white'
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'coffeechat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
               }`}
           >
             <div className="flex items-center gap-3">
@@ -520,7 +520,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <span>Coffee Chat</span>
             </div>
             {invites.filter(inv => inv.status === 'accepted').length > 0 && (
-              <span className="text-[10px] bg-amber-500/20 font-mono text-amber-400 px-1.5 py-0.5 rounded-sm">
+              <span className="text-[10px] bg-red-500/20 font-mono text-red-400 px-1.5 py-0.5 rounded-sm">
                 {invites.filter(inv => inv.status === 'accepted').length}
               </span>
             )}
@@ -653,8 +653,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
               {/* Data protection banner */}
               {isAnonymized ? (
-                <div className="bg-amber-50 border-b border-amber-100 text-amber-800 px-6 py-2.5 flex items-center gap-2 text-[10px] font-semibold font-mono">
-                  <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+                <div className="bg-red-50 border-b border-red-100 text-red-800 px-6 py-2.5 flex items-center gap-2 text-[10px] font-semibold font-mono">
+                  <ShieldAlert className="w-4 h-4 text-red-600 shrink-0" />
                   <span>Security Shield: Personal identifiers masked under GDPR. Match score must be &gt;= threshold to invite.</span>
                 </div>
               ) : (
