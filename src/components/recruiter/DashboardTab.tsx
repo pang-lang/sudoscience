@@ -6,6 +6,7 @@ import { db } from '../../utils/db';
 interface DashboardTabProps {
   candidates: Candidate[];
   invites: CoffeeChatInvite[];
+  registrations: any[];
   onViewCandidate: (cand: Candidate) => void;
 }
 
@@ -20,7 +21,7 @@ type SectionType =
   | 'funnel_mentorship'
   | 'funnel_placement';
 
-export default function DashboardTab({ candidates, invites, onViewCandidate }: DashboardTabProps) {
+export default function DashboardTab({ candidates, invites, registrations, onViewCandidate }: DashboardTabProps) {
   const [activeSectionModal, setActiveSectionModal] = useState<SectionType | null>(null);
   const [hoveredMonthIndex, setHoveredMonthIndex] = useState<number | null>(null);
 
@@ -39,15 +40,15 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
     ? Math.round(candidates.reduce((sum, c) => sum + c.score, 0) / candidates.length) 
     : 0;
   
-  const allRegistrations = db.getRegistrations();
+  const allRegistrations = registrations;
   const completedLabsCount = allRegistrations.length;
   const activeMatchesCount = invites.filter(inv => inv.status === 'accepted').length;
 
   // Stage counts for pipeline funnel
   const stageCount = (stage: string) => candidates.filter(c => c.stage === stage).length;
   const talentPool = candidates.length; // all candidates
-  const lectureCount = candidates.filter(c => allRegistrations.some(r => r.studentId === c.id && (r.eventId === 'e1' || r.eventId === 'e2'))).length;
-  const workshopCount = candidates.filter(c => allRegistrations.some(r => r.studentId === c.id && r.eventId === 'e3')).length;
+  const lectureCount = candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && (r.event_id === 'e1' || r.event_id === 'e2'))).length;
+  const workshopCount = candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && r.event_id === 'e3')).length;
   const hackathonCount = candidates.filter(c => c.skills.includes('SolidWorks') || c.skills.includes('RFID Systems') || c.score >= 88).length;
   const mentorshipCount = candidates.filter(c => c.stage === 'Recruiter Review' || invites.some(i => i.candidateId === c.id)).length;
   const placementCount = stageCount('Interview Scheduled');
@@ -111,9 +112,9 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
         return candidates.filter(c => c.score >= 85).map(c => ({ candidate: c, extraInfo: `Top score: ${c.score}/100` }));
       case 'completed_labs':
         return allRegistrations.map(r => {
-          const candidate = candidates.find(c => c.id === r.studentId) || {
-            id: r.studentId,
-            name: r.studentName,
+          const candidate = candidates.find(c => c.id === r.student_id) || {
+            id: r.student_id,
+            name: r.student_name,
             university: 'Technische Universität München',
             skills: [],
             score: 85,
@@ -122,7 +123,7 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
           };
           return {
             candidate,
-            extraInfo: `Event: ${r.eventTitle.split(':')[0]}`
+            extraInfo: `Event: ${r.event_title?.split(':')[0] || 'Lab'}`
           };
         });
       case 'active_matches':
@@ -143,13 +144,13 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
         });
       case 'funnel_lecture':
         // e1 or e2 registered
-        return candidates.filter(c => allRegistrations.some(r => r.studentId === c.id && (r.eventId === 'e1' || r.eventId === 'e2'))).map(c => ({
+        return candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && (r.event_id === 'e1' || r.event_id === 'e2'))).map(c => ({
           candidate: c,
           extraInfo: 'Guest lecture registered'
         }));
       case 'funnel_workshop':
         // e3 registered
-        return candidates.filter(c => allRegistrations.some(r => r.studentId === c.id && r.eventId === 'e3')).map(c => ({
+        return candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && r.event_id === 'e3')).map(c => ({
           candidate: c,
           extraInfo: 'RedExpert Workshop'
         }));
@@ -224,7 +225,7 @@ export default function DashboardTab({ candidates, invites, onViewCandidate }: D
             <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-semibold block font-mono">Registered Lab Events</span>
             <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{completedLabsCount}</p>
             <span className="text-[10px] text-emerald-600 font-semibold font-mono block mt-1 flex items-center gap-0.5 group-hover:text-red-600 transition-colors">
-              {candidates.filter(c => allRegistrations.some(r => r.studentId === c.id)).length} students registered <ArrowUpRight className="w-3 h-3" />
+              {candidates.filter(c => allRegistrations.some(r => r.student_id === c.id)).length} students registered <ArrowUpRight className="w-3 h-3" />
             </span>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0 group-hover:bg-red-50 group-hover:text-red-600 transition-colors">

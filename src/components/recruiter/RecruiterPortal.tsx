@@ -8,14 +8,14 @@ import {
 import {
   Briefcase, Search, BarChart3, Users, Sparkles, X, Lock, Unlock, ShieldAlert, Check, Send, UserCheck, Coffee, MessageSquare, FolderOpen
 } from 'lucide-react';
-import { db } from '../../utils/db';
+import { db, UnifiedJob } from '../../utils/db';
+import { supabase } from '../../lib/supabase';
 
 import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
 import CoffeeChatTab from './CoffeeChatTab';
-import { supabase } from '../../lib/supabase';
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -26,6 +26,9 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
   // Candidates State
   const [candidates, setCandidates] = useState<Candidate[]>([]);
+
+  // Event Registrations State
+  const [registrations, setRegistrations] = useState<any[]>([]);
 
   // Coffee Chat Invites state with LocalStorage sync
   const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
@@ -61,10 +64,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     };
   });
 
-  // Sync state modifications to localStorage
-  useEffect(() => {
-    db.saveCandidates(candidates);
-  }, [candidates]);
+
 
   useEffect(() => {
     localStorage.setItem('we_connect_chat_invites', JSON.stringify(invites));
@@ -115,7 +115,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     localStorage.setItem('we_connect_coffee_threshold', val.toString());
   };
 
-  // Fetch initial data from Supabase & Local DB bootstrap
   useEffect(() => {
     async function loadData() {
       // 1. Fetch Candidates from Supabase
@@ -133,36 +132,17 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
             saved: c.saved || false
           }));
-          // Ensure c_sarah_j (Sarah Jenkins) is always preserved
-          const hasSarah = mappedCandidates.some((c: any) => c.id === 'c_sarah_j');
-          if (!hasSarah) {
-            const sarahDefault = db.getCandidates().find(c => c.id === 'c_sarah_j') || {
-              id: 'c_sarah_j',
-              name: 'Sarah Jenkins',
-              university: 'Munich University of Applied Sciences',
-              skills: ['SolidWorks', 'AutoCAD', 'Thermodynamics', 'Project Management', 'Data Analysis', 'PCB Design', 'RFID Tech'],
-              score: 85,
-              stage: 'Talent Pool' as const,
-              avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
-              projects: [
-                { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'] },
-                { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'] }
-              ]
-            };
-            mappedCandidates.push(sarahDefault);
-          }
-          // Save to our local unified DB first
-          db.saveCandidates(mappedCandidates);
+          setCandidates(mappedCandidates);
         }
       } catch (e) {
-        console.warn('Could not fetch candidates from Supabase, using local db cache:', e);
+        console.error('Could not fetch candidates from Supabase:', e);
       }
 
-      // Load candidates from db.ts to preserve local sync (e.g. Sarah Jenkins' visa stamps & updated score)
-      setCandidates(db.getCandidates());
-
-      // 2. Fetch Postings, Applications, and Candidates from Supabase
+      // 2. Fetch Postings, Applications, and Registrations from Supabase
       try {
+        const { data: regsData, error: regsError } = await supabase.from('event_registrations').select('*');
+        if (!regsError && regsData) setRegistrations(regsData);
+
         const { data: jobsData, error: jobsErr } = await supabase.from('opportunities').select('*');
         const { data: appsData } = await supabase.from('opportunity_applications').select('*');
         const { data: candsData } = await supabase.from('candidates').select('*');
@@ -292,7 +272,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   const handleSetCandidates: React.Dispatch<React.SetStateAction<Candidate[]>> = (value) => {
     setCandidates(prev => {
       const next = typeof value === 'function' ? value(prev) : value;
-      db.saveCandidates(next);
       return next;
     });
   };
@@ -313,7 +292,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       // Optimistic update
       setCandidates(prev => {
         const next = prev.map(c => c.id === id ? { ...c, stage: nextStage } : c);
-        db.saveCandidates(next);
         return next;
       });
       showToast(`Advanced ${candidate.name} to "${nextStage}"`);
@@ -331,7 +309,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           // Revert on error
           setCandidates(prev => {
             const next = prev.map(c => c.id === id ? { ...c, stage: candidate.stage } : c);
-            db.saveCandidates(next);
             return next;
           });
         }
@@ -374,7 +351,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             showToast(`Match Alert: ${cand.name.split(' ')[0]} accepted your coffee chat!`);
             setCandidates(cands => {
               const next = cands.map(c => c.id === cand.id ? { ...c, stage: 'Interview Scheduled' as const } : c);
-              db.saveCandidates(next);
               return next;
             });
             return {
@@ -586,6 +562,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             <DashboardTab
               candidates={candidates}
               invites={invites}
+              registrations={registrations}
               onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
             />
           )}

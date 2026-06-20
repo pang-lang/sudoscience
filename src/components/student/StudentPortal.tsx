@@ -104,10 +104,11 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       // 3. Load Events
       const { data: evtData } = await supabase.from('masterclass_events').select('*');
       if (evtData) {
-        const regs = db.getRegistrations();
+        const { data: regsData } = await supabase.from('event_registrations').select('*').eq('student_id', 'c_sarah_j');
+        const regs = regsData || [];
         setEvents(evtData.map((e: any) => ({
           ...e,
-          registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
+          registered: regs.some((r: any) => r.event_id === e.id)
         })));
       }
 

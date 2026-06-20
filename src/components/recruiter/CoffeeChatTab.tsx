@@ -281,7 +281,6 @@ export default function CoffeeChatTab({
             showToast(`✅ ${cand.name.split(' ')[0]} accepted your coffee chat!`);
             setCandidates(cs => {
               const next = cs.map(c => c.id === cand.id ? { ...c, stage: 'Interview Scheduled' as const } : c);
-              db.saveCandidates(next);
               return next;
             });
             return { ...inv, status: 'accepted' as const, studentSharedProfile: Math.random() > 0.4 };
