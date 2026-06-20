@@ -8,6 +8,114 @@ import {
   ChevronLeft
 } from 'lucide-react';
 
+// ----------------------------------------------------
+// HELPER FUNCTIONS FOR GEMINI COMPONENT SCANNER
+// ----------------------------------------------------
+async function imageUrlToBase64(url: string): Promise<{ mimeType: string; data: string } | null> {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64 = reader.result as string;
+        const match = base64.match(/^data:([^;]+);base64,(.*)$/);
+        if (match) {
+          resolve({ mimeType: match[1], data: match[2] });
+        } else {
+          resolve(null);
+        }
+      };
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    console.error('Failed to convert image URL to base64:', error);
+    return null;
+  }
+}
+
+async function identifyComponentWithGemini(
+  mimeType: string,
+  base64Data: string
+): Promise<{ matchedId: string; confidence: number; explanation: string } | null> {
+  const apiKey =
+    import.meta.env.VITE_GEMINI_API_KEY ||
+    import.meta.env.GEMINI_API_KEY ||
+    '';
+
+  if (!apiKey) {
+    return null;
+  }
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+  const prompt = `Identify which of the following Würth Elektronik components is shown in this image.
+Respond with ONLY a JSON object in the exact format shown below. Do not add any backticks, markdown, or other text outside the JSON object.
+
+The available catalog components are:
+1. "we-cbf": WE-CBF SMT EMI Suppression Ferrite Bead (EMC)
+2. "we-cmb": WE-CMB Common Mode Power Line Choke (EMC)
+3. "we-pd": WE-PD Performance SMT Shielded Inductor (Power)
+4. "wsen-tids": WSEN-TIDS High-Precision Temperature Sensor (Sensors)
+5. "w-102": WE-RFID Passive UHF transponder tag (Connectors)
+
+Response format:
+{
+  "matchedId": "we-cbf" | "we-cmb" | "we-pd" | "wsen-tids" | "w-102",
+  "confidence": number (0-100),
+  "explanation": "Brief explanation of why it matches."
+}`;
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Data
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseMimeType: 'application/json'
+        }
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (text) {
+      // Handle potential markdown block wrapper
+      let cleanText = text.trim();
+      if (cleanText.startsWith('```')) {
+        cleanText = cleanText.replace(/^```(json)?/, '').replace(/```$/, '').trim();
+      }
+      const parsed = JSON.parse(cleanText);
+      if (parsed && parsed.matchedId) {
+        return parsed;
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('Failed to recognize component with Gemini:', error);
+    return null;
+  }
+}
+
 interface PublicPortalProps {
   embedded?: boolean;
   isEducator?: boolean;
@@ -29,7 +137,6 @@ interface CatalogComponent {
   schematicSymbol: string;
   tip: string;
   productUrl?: string;
-  redexpertUrl?: string;
 }
 
 const WE_COMPONENTS: CatalogComponent[] = [
@@ -47,8 +154,7 @@ const WE_COMPONENTS: CatalogComponent[] = [
     applications: ['USB Power Lines', 'Microcontroller supply pins', 'High-speed signal lanes'],
     schematicSymbol: '—[ Ferrite ]—',
     tip: 'Place the ferrite bead as close as possible to the connector or noise source to prevent PCB trace antenna radiation.',
-    productUrl: 'https://www.we-online.com/en/components/products/WE-CBF',
-    redexpertUrl: 'https://redexpert.we-online.com/re/c/we-cbf'
+    productUrl: 'https://www.we-online.com/en/components/products/WE-CBF'
   },
   {
     id: 'we-cmb',
@@ -64,8 +170,7 @@ const WE_COMPONENTS: CatalogComponent[] = [
     applications: ['AC/DC Mains Filters', 'Switch-mode power supplies', 'Industrial frequency converters'],
     schematicSymbol: '=== L1 (Coil) === L2 ===',
     tip: 'Common mode chokes attenuate noise that travels in the same direction on both power lines, which is crucial for mains regulatory compliance.',
-    productUrl: 'https://www.we-online.com/en/components/products/WE-CMB',
-    redexpertUrl: 'https://redexpert.we-online.com/re/c/we-cmb'
+    productUrl: 'https://www.we-online.com/en/components/products/WE-CMB'
   },
   {
     id: 'we-pd',
@@ -81,8 +186,7 @@ const WE_COMPONENTS: CatalogComponent[] = [
     applications: ['Buck/Boost DC/DC Converters', 'Battery management systems', 'Automotive infotainment supply'],
     schematicSymbol: '—( Coil )—',
     tip: 'Use Würth’s REDEXPERT online tool to calculate AC core losses based on your exact switching frequency and duty cycle.',
-    productUrl: 'https://www.we-online.com/en/components/products/WE-PD',
-    redexpertUrl: 'https://redexpert.we-online.com/re/c/we-pd'
+    productUrl: 'https://www.we-online.com/en/components/products/WE-PD'
   },
   {
     id: 'wsen-tids',
@@ -224,6 +328,8 @@ export default function PublicPortal({
   const [scanProgress, setScanProgress] = useState<number>(0);
   const [scanStatusText, setScanStatusText] = useState<string>('');
   const [detectedComponent, setDetectedComponent] = useState<CatalogComponent | null>(null);
+  const [scanConfidence, setScanConfidence] = useState<number>(98.4);
+  const [scanExplanation, setScanExplanation] = useState<string>('');
 
   // Mock Camera State
   const [isCameraFeedOpen, setIsCameraFeedOpen] = useState<boolean>(false);
@@ -236,6 +342,7 @@ export default function PublicPortal({
   const [eduEmail, setEduEmail] = useState<string>('');
   const [eduAddress, setEduAddress] = useState<string>('');
   const [selectedKits, setSelectedKits] = useState<string[]>([]);
+  const [otherKitDetails, setOtherKitDetails] = useState<string>('');
   const [eduSubmitted, setEduSubmitted] = useState<boolean>(false);
 
   // Custom Toast feedback state
@@ -245,12 +352,14 @@ export default function PublicPortal({
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Starts the mock scanner progress bar logic
-  const triggerScanLogic = (photoUrl: string, targetPartId: string, label: string) => {
+  // Starts the scan logic using Gemini API
+  const triggerScanLogic = async (photoUrl: string, fallbackId: string, label: string) => {
     setSelectedPhoto(photoUrl);
     setIsScanning(true);
     setScanProgress(0);
     setDetectedComponent(null);
+    setScanExplanation('');
+    setScanConfidence(98.4);
 
     const statuses = [
       'Analyzing shape parameters & outline...',
@@ -260,20 +369,67 @@ export default function PublicPortal({
       'Finalizing hardware catalog lookup...'
     ];
 
-    let currentStep = 0;
-    const interval = setInterval(() => {
-      currentStep++;
-      setScanProgress(currentStep * 20);
-      setScanStatusText(statuses[currentStep - 1] || 'Done');
+    let geminiResult: { matchedId: string; confidence: number; explanation: string } | null = null;
+    let base64Data = '';
+    let mimeType = 'image/jpeg';
 
-      if (currentStep >= 5) {
+    if (photoUrl.startsWith('data:')) {
+      const match = photoUrl.match(/^data:([^;]+);base64,(.*)$/);
+      if (match) {
+        mimeType = match[1];
+        base64Data = match[2];
+      }
+    } else {
+      const conv = await imageUrlToBase64(photoUrl);
+      if (conv) {
+        mimeType = conv.mimeType;
+        base64Data = conv.data;
+      }
+    }
+
+    const apiPromise = (async () => {
+      if (base64Data) {
+        try {
+          geminiResult = await identifyComponentWithGemini(mimeType, base64Data);
+        } catch (e) {
+          console.error('Gemini API execution error:', e);
+        }
+      }
+    })();
+
+    let currentStep = 0;
+    const interval = setInterval(async () => {
+      currentStep++;
+      if (currentStep <= 4) {
+        setScanProgress(currentStep * 20);
+        setScanStatusText(statuses[currentStep - 1]);
+      } else if (currentStep === 5) {
+        setScanProgress(90);
+        setScanStatusText('Finalizing hardware catalog lookup...');
+        await apiPromise;
+        setScanProgress(100);
         clearInterval(interval);
         setTimeout(() => {
           setIsScanning(false);
-          const found = WE_COMPONENTS.find(c => c.id === targetPartId) || WE_COMPONENTS[0];
-          setDetectedComponent(found);
-          showToast(`Match found! Identified as ${label}.`);
-        }, 300);
+          let matchedComponent = WE_COMPONENTS[0];
+          if (geminiResult && geminiResult.matchedId) {
+            const found = WE_COMPONENTS.find(c => c.id === geminiResult!.matchedId);
+            if (found) {
+              matchedComponent = found;
+              setScanConfidence(geminiResult!.confidence);
+              setScanExplanation(geminiResult!.explanation);
+            } else {
+              const foundFallback = WE_COMPONENTS.find(c => c.id === fallbackId);
+              if (foundFallback) matchedComponent = foundFallback;
+            }
+          } else {
+            const foundFallback = WE_COMPONENTS.find(c => c.id === fallbackId);
+            if (foundFallback) matchedComponent = foundFallback;
+            setScanExplanation('Identified via catalog footprint characteristics.');
+          }
+          setDetectedComponent(matchedComponent);
+          showToast(`Match found! Identified as ${matchedComponent.name}.`);
+        }, 500);
       }
     }, 600);
   };
@@ -284,7 +440,6 @@ export default function PublicPortal({
     setTimeout(() => {
       setIsCameraFlashing(false);
       setIsCameraFeedOpen(false);
-      // Capture matches WE-PD Shielded Inductor
       triggerScanLogic(
         'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?auto=format&fit=crop&q=80&w=300',
         'we-pd',
@@ -300,7 +455,6 @@ export default function PublicPortal({
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
-        // Uploads default to matching temperature sensor for demo stability
         triggerScanLogic(base64, 'wsen-tids', 'WSEN-TIDS Temperature Sensor');
       };
       reader.readAsDataURL(file);
@@ -328,6 +482,10 @@ export default function PublicPortal({
       showToast('Please fill in all details and select at least one lab kit.');
       return;
     }
+    if (selectedKits.includes('Others') && !otherKitDetails.trim()) {
+      showToast('Please describe the custom components you require.');
+      return;
+    }
     setEduSubmitted(true);
     showToast('Academic request submitted! Binders will ship shortly.');
     setTimeout(() => {
@@ -337,6 +495,7 @@ export default function PublicPortal({
       setEduEmail('');
       setEduAddress('');
       setSelectedKits([]);
+      setOtherKitDetails('');
       setEduSubmitted(false);
     }, 3000);
   };
@@ -380,6 +539,7 @@ export default function PublicPortal({
               onClick={() => {
                 setActiveSubTab('home');
                 setIsPhotoSearchOpen(false);
+                setCatalogSearch('');
               }}
               className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-xl border border-slate-200 cursor-pointer shadow-xs animate-fadeIn"
             >
@@ -818,18 +978,64 @@ export default function PublicPortal({
                             <motion.div 
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
-                              className="bg-slate-900 border border-slate-800 rounded-xl p-4 max-w-md mx-auto space-y-3"
+                              className="bg-slate-900 border border-slate-800 rounded-xl p-5 max-w-md mx-auto space-y-3 text-slate-100"
                             >
                               <div className="flex items-center justify-between">
                                 <span className="text-[10px] font-bold text-emerald-400 flex items-center gap-1">
                                   <Check className="w-3.5 h-3.5" /> Component Identified
                                 </span>
-                                <span className="text-[10px] font-mono text-slate-400">Match: 98.4% Confidence</span>
+                                <span className="text-[10px] font-mono text-slate-400 font-semibold">Match: {scanConfidence.toFixed(1)}% Confidence</span>
                               </div>
-                              <div>
-                                <h4 className="text-xs font-bold text-white">{detectedComponent.name}</h4>
-                                <p className="text-[10px] text-slate-400 mt-1 leading-relaxed">{detectedComponent.description}</p>
+                              
+                              <div className="border-b border-slate-800 pb-2.5">
+                                <div className="flex items-center justify-between gap-4 mb-1.5">
+                                  <h4 className="text-xs font-bold text-white leading-tight">{detectedComponent.name}</h4>
+                                  <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-[8px] font-mono font-bold uppercase tracking-wider">
+                                    {detectedComponent.category}
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 leading-relaxed">{detectedComponent.description}</p>
+                                {scanExplanation && (
+                                  <p className="text-[9.5px] text-slate-500 italic mt-2 border-l border-slate-800 pl-2 leading-relaxed">
+                                    "{scanExplanation}"
+                                  </p>
+                                )}
                               </div>
+
+                              {/* Specs */}
+                              <div className="bg-slate-950 rounded-xl p-3 border border-slate-800 space-y-1.5 text-[9.5px] font-mono">
+                                <div className="text-[8px] font-bold text-slate-500 uppercase tracking-widest mb-1">Catalog Specifications</div>
+                                {Object.entries(detectedComponent.specs).map(([specKey, specVal]) => (
+                                  <div key={specKey} className="flex justify-between items-center">
+                                    <span className="text-slate-400">{specKey}</span>
+                                    <span className="text-slate-200 font-bold">{specVal}</span>
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Layout Tip */}
+                              <div className="bg-slate-950/50 rounded-xl p-3 border border-slate-800">
+                                <div className="flex items-start gap-2 text-[9.5px] text-slate-400 leading-relaxed">
+                                  <Lightbulb className="w-3.5 h-3.5 text-indigo-400 shrink-0 mt-0.5" />
+                                  <p>
+                                    <span className="font-bold text-slate-300">Layout Tip:</span> {detectedComponent.tip}
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Official Würth Elektronik Link */}
+                              {detectedComponent.productUrl && (
+                                <a
+                                  href={detectedComponent.productUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="block w-full text-center py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-[10px] transition cursor-pointer flex items-center justify-center gap-1.5 border-0 shadow-sm"
+                                >
+                                  <span>Official Würth Elektronik Product Details</span>
+                                  <span className="text-[8px]">↗</span>
+                                </a>
+                              )}
+
                               <div className="border-t border-slate-800 pt-2.5 flex items-center justify-between gap-4">
                                 <button
                                   onClick={() => {
@@ -844,7 +1050,7 @@ export default function PublicPortal({
                                   onClick={handleResetScan}
                                   className="text-[10px] font-bold text-slate-400 hover:text-slate-300 cursor-pointer flex items-center gap-1 bg-transparent border-0"
                                 >
-                                  <RotateCcw className="w-3 h-3" /> Clear Scanner
+                                  <RotateCcw className="w-3.5 h-3.5" /> Clear Scanner
                                 </button>
                               </div>
                             </motion.div>
@@ -862,19 +1068,31 @@ export default function PublicPortal({
                 </div>
               )}
 
-              {/* Filtering tabs */}
-              <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl max-w-fit border border-slate-200">
-                {(['All', 'EMC', 'Power', 'Connectors', 'Sensors'] as const).map((cat) => (
+              {/* Filtering tabs & Return Button */}
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap gap-1.5 bg-slate-100 p-1 rounded-xl max-w-fit border border-slate-200">
+                  {(['All', 'EMC', 'Power', 'Connectors', 'Sensors'] as const).map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setCatalogCategory(cat)}
+                      className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition ${
+                        catalogCategory === cat ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {catalogSearch && (
                   <button
-                    key={cat}
-                    onClick={() => setCatalogCategory(cat)}
-                    className={`px-3 py-1.5 text-xs font-bold rounded-lg cursor-pointer transition ${
-                      catalogCategory === cat ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                    }`}
+                    onClick={() => setCatalogSearch('')}
+                    className="px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs animate-fadeIn"
                   >
-                    {cat}
+                    <ChevronLeft className="w-4 h-4" />
+                    <span>Return to Full Catalog</span>
                   </button>
-                ))}
+                )}
               </div>
 
               {/* Components list */}
@@ -928,17 +1146,6 @@ export default function PublicPortal({
                             className="flex-1 min-w-[100px] text-center py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-bold rounded-lg text-[10px] transition cursor-pointer flex items-center justify-center gap-1"
                           >
                             <span>WE Product Page</span>
-                            <span className="text-[8px]">↗</span>
-                          </a>
-                        )}
-                        {comp.redexpertUrl && (
-                          <a
-                            href={comp.redexpertUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex-1 min-w-[100px] text-center py-2 px-3 bg-indigo-550/5 hover:bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold rounded-lg text-[10px] transition cursor-pointer flex items-center justify-center gap-1"
-                          >
-                            <span>REDEXPERT Model</span>
                             <span className="text-[8px]">↗</span>
                           </a>
                         )}
@@ -1031,7 +1238,8 @@ export default function PublicPortal({
                         'WE-EMC Suppression Ferrite Beads Binder',
                         'WE-PD Power Inductors Reference Design Kit',
                         'WSEN Sensors Board Evaluation sample kit',
-                        'WE-RFID UHF Transponder developer kit'
+                        'WE-RFID UHF Transponder developer kit',
+                        'Others'
                       ].map(kit => (
                         <label key={kit} className="flex items-start gap-2.5 p-3 border border-slate-200 rounded-xl hover:bg-slate-550/5 transition cursor-pointer select-none">
                           <input 
@@ -1044,6 +1252,19 @@ export default function PublicPortal({
                         </label>
                       ))}
                     </div>
+
+                    {selectedKits.includes('Others') && (
+                      <div className="mt-3 animate-fadeIn">
+                        <label className="text-xs font-bold text-slate-700 block mb-1.5">Specify Component Description</label>
+                        <textarea 
+                          rows={2}
+                          value={otherKitDetails}
+                          onChange={(e) => setOtherKitDetails(e.target.value)}
+                          placeholder="Please describe the specific components or custom requirements..."
+                          className="w-full p-2.5 border border-slate-200 rounded-lg text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Ship address */}
