@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  LearningMaterial, 
-  StudentPerformance, 
-  CapstoneProject 
+import {
+  LearningMaterial,
+  StudentPerformance,
+  CapstoneProject
 } from '../../types';
-import { 
-  Upload, Table, BookOpen, Sparkles
+import {
+  Upload, Table, BookOpen, Sparkles, Globe
 } from 'lucide-react';
 
 import ContentTab from './ContentTab';
 import InsightsTab from './InsightsTab';
 import CollaborateTab from './CollaborateTab';
 import { supabase } from '../../lib/supabase';
+import PublicPortal from '../public/PublicPortal';
 
 interface EducatorPortalProps {
   onLogout: () => void;
@@ -20,7 +21,7 @@ interface EducatorPortalProps {
 
 export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
   // ---- DATA ENGINE INITIALIZATION ----
-  
+
   // Dynamic material recordings listed
   const [materials, setMaterials] = useState<LearningMaterial[]>([]);
 
@@ -93,7 +94,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
   }, []);
 
   // View tabs
-  const [currentTab, setCurrentTab] = useState<'content' | 'insights' | 'collaborate'>('content');
+  const [currentTab, setCurrentTab] = useState<'content' | 'insights' | 'collaborate' | 'open-hub'>('content');
 
   // Toast feedback overlay
   const [toast, setToast] = useState<string | null>(null);
@@ -105,11 +106,11 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
 
   return (
     <div id="educator-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
-      
+
       {/* Toast */}
       <AnimatePresence>
         {toast && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -123,7 +124,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
 
       {/* --- SIDEBAR NAVIGATION --- */}
       <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
-        
+
         {/* Brand layout block */}
         <div className="p-6 border-b border-slate-900">
           <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={() => setCurrentTab('content')}>
@@ -146,12 +147,11 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
 
         {/* Lateral lists */}
         <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-          <button 
+          <button
             id="tab-educator-content"
             onClick={() => setCurrentTab('content')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'content' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'content' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Upload className="w-4 h-4" />
@@ -159,12 +159,11 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
             </div>
           </button>
 
-          <button 
+          <button
             id="tab-educator-insights"
             onClick={() => setCurrentTab('insights')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'insights' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'insights' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Table className="w-4 h-4" />
@@ -175,26 +174,38 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
             )}
           </button>
 
-          <button 
+          <button
             id="tab-educator-collaborate"
             onClick={() => setCurrentTab('collaborate')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'collaborate' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'collaborate' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <BookOpen className="w-4 h-4" />
               <span>Collaborate Caps</span>
             </div>
           </button>
+
+          <button
+            id="tab-educator-open-hub"
+            onClick={() => setCurrentTab('open-hub')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'open-hub' ? 'bg-slate-800 text-white border-l-4 border-indigo-500' : 'hover:bg-slate-900 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="w-4 h-4 text-indigo-400" />
+              <span>Academic Reference</span>
+            </div>
+            <span className="text-[9px] font-mono bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">Ref</span>
+          </button>
         </div>
 
         {/* Swap role back to student sandbox */}
         <div className="p-4 border-t border-slate-900 space-y-2">
-          <button 
+          <button
             onClick={() => {
               showToast("Switched Sandbox to Student Portal");
-              window.location.hash = "#student"; 
+              window.location.hash = "#student";
               window.location.reload();
             }}
             className="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer"
@@ -203,7 +214,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
             SWAP TO STUDENT
           </button>
 
-          <button 
+          <button
             onClick={onLogout}
             className="w-full py-1.5 hover:bg-red-950 hover:text-red-400 text-slate-500 font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1 border border-transparent cursor-pointer"
           >
@@ -214,7 +225,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
 
       {/* --- MAIN PAGE VIEW --- */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Course top bar */}
         <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shrink-0">
           <div>
@@ -230,25 +241,29 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
         {/* --- MAIN PAGE TAB VIEW WINDOWS --- */}
         <div className="p-8 flex-1">
           {currentTab === 'content' && (
-            <ContentTab 
-              materials={materials} 
-              setMaterials={setMaterials} 
-              showToast={showToast} 
+            <ContentTab
+              materials={materials}
+              setMaterials={setMaterials}
+              showToast={showToast}
             />
           )}
 
           {currentTab === 'insights' && (
-            <InsightsTab 
-              students={students} 
+            <InsightsTab
+              students={students}
             />
           )}
 
           {currentTab === 'collaborate' && (
-            <CollaborateTab 
-              capstones={capstones} 
-              setCapstones={setCapstones} 
-              showToast={showToast} 
+            <CollaborateTab
+              capstones={capstones}
+              setCapstones={setCapstones}
+              showToast={showToast}
             />
+          )}
+
+          {currentTab === 'open-hub' && (
+            <PublicPortal embedded={true} isEducator={true} />
           )}
         </div>
       </main>

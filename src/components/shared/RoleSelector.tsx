@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
 import { UserRole } from '../../types';
-import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight } from 'lucide-react';
+import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight, Globe } from 'lucide-react';
 
 interface RoleSelectorProps {
   onSelectRole: (role: UserRole) => void;
