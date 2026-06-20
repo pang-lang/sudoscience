@@ -506,7 +506,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <Users className="w-4 h-4" />
               <span>Engineering Pipeline</span>
             </div>
-            <span className="text-[10px] bg-slate-800 font-mono text-slate-400 px-1 rounded-sm">{candidates.length}</span>
           </button>
 
           <button
@@ -519,11 +518,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <Coffee className="w-4 h-4" />
               <span>Coffee Chat</span>
             </div>
-            {invites.filter(inv => inv.status === 'accepted').length > 0 && (
-              <span className="text-[10px] bg-red-500/20 font-mono text-red-400 px-1.5 py-0.5 rounded-sm">
-                {invites.filter(inv => inv.status === 'accepted').length}
-              </span>
-            )}
           </button>
 
           <button
@@ -536,7 +530,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <Briefcase className="w-4 h-4" />
               <span>Opportunities</span>
             </div>
-            <span className="text-[10px] bg-slate-800 font-mono text-slate-400 px-1 rounded-sm">{postings.length}</span>
           </button>
         </div>
 

@@ -318,17 +318,6 @@ export default function CoffeeChatTab({
             </span>
             <div className="flex items-center gap-2 mt-1">
               <h2 className="font-display font-bold text-2xl text-slate-900">Coffee Chat Matching</h2>
-              {/* Supabase sync status indicator */}
-              <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${
-                dbStatus === 'ok'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : dbStatus === 'local'
-                  ? 'bg-red-50 text-red-700 border-red-200'
-                  : 'bg-slate-100 text-slate-500 border-slate-200'
-              }`}>
-                <Database className="w-2.5 h-2.5" />
-                {dbStatus === 'ok' ? 'Supabase synced' : dbStatus === 'local' ? 'Local storage' : 'Connecting…'}
-              </span>
             </div>
             <p className="text-slate-500 text-xs mt-1">
               Students ranked by how well their skills &amp; projects align with <strong>{managerProfile.name}</strong>'s expertise in{' '}
