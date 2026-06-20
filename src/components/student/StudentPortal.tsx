@@ -21,7 +21,6 @@ import LearningTab from './LearningTab';
 import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
-import CoffeeChatTab from './CoffeeChatTab';
 import { supabase } from '../../lib/supabase';
 
 interface StudentPortalProps {
@@ -236,7 +235,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   }, [invites]);
 
   // ---- APP WINDOW STATE RENDERING ----
-  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket' | 'coffee-chat'>('passport');
+  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
   
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -340,23 +339,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             </div>
           </button>
 
-          <button 
-            id="tab-coffee-chat"
-            onClick={() => setCurrentTab('coffee-chat')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'coffee-chat' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Coffee className="w-4 h-4" />
-              <span>Coffee Chat Desk</span>
-            </div>
-            {invites.filter(inv => inv.status === 'pending').length > 0 && (
-              <span className="text-[10px] font-mono bg-black/25 px-1.5 py-0.5 rounded text-white">
-                {invites.filter(inv => inv.status === 'pending').length}
-              </span>
-            )}
-          </button>
 
           <button
             id="tab-network"
@@ -485,16 +467,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             />
           )}
 
-          {currentTab === 'coffee-chat' && (
-            <CoffeeChatTab 
-              invites={invites}
-              setInvites={setInvites}
-              connections={connections}
-              setConnections={setConnections}
-              showToast={showToast}
-              setCurrentTab={setCurrentTab}
-            />
-          )}
 
           {currentTab === 'ticket' && (
             <TicketTab
