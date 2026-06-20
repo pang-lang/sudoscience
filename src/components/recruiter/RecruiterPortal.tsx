@@ -93,7 +93,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       try {
         const { data: candidatesData, error } = await supabase.from('candidates').select('*');
         if (error) throw error;
-        if (candidatesData && candidatesData.length > 0) {
+        if (candidatesData) {
           const mappedCandidates = candidatesData.map((c: any) => ({
             id: c.id,
             name: c.name,
@@ -119,7 +119,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       try {
         const { data: jobsData, error } = await supabase.from('opportunities').select('*');
         if (error) throw error;
-        if (jobsData && jobsData.length > 0) {
+        if (jobsData) {
           const mappedJobs = jobsData.map((o: any) => {
             const existing = db.getJobs().find(old => old.id === o.id);
             return {

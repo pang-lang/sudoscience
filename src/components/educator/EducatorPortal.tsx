@@ -37,15 +37,13 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
       try {
         const { data: matData, error } = await supabase.from('learning_materials').select('*');
         if (error) throw error;
-        if (matData && matData.length > 0) {
+        if (matData) {
           setMaterials(matData.map((m: any) => ({
             ...m,
             fileName: m.file_name,
             durationOrSize: m.duration_or_size,
             uploadDate: m.upload_date
           })));
-        } else {
-          throw new Error('No learning materials found');
         }
       } catch (e) {
         console.warn('Could not fetch learning materials from Supabase, using mock fallback:', e);
@@ -58,14 +56,12 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
       try {
         const { data: stuData, error } = await supabase.from('student_performances').select('*');
         if (error) throw error;
-        if (stuData && stuData.length > 0) {
+        if (stuData) {
           setStudents(stuData.map((s: any) => ({
             ...s,
             resourcesAccessed: s.resources_accessed,
             questionsAsked: s.questions_asked
           })));
-        } else {
-          throw new Error('No student performances found');
         }
       } catch (e) {
         console.warn('Could not fetch student performances from Supabase, using mock fallback:', e);
@@ -79,14 +75,12 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
       try {
         const { data: capData, error } = await supabase.from('capstone_projects').select('*');
         if (error) throw error;
-        if (capData && capData.length > 0) {
+        if (capData) {
           setCapstones(capData.map((c: any) => ({
             ...c,
             teamCount: c.team_count,
             sharedWithWE: c.shared_with_we
           })));
-        } else {
-          throw new Error('No capstone projects found');
         }
       } catch (e) {
         console.warn('Could not fetch capstone projects from Supabase, using mock fallback:', e);

@@ -86,15 +86,13 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       try {
         const { data: projData, error } = await supabase.from('projects').select('*');
         if (error) throw error;
-        if (projData && projData.length > 0) {
+        if (projData) {
           setProjects(projData.map((p: any) => ({
             ...p,
             imageUrl: p.image_url,
             codeUrl: p.code_url,
             demoUrl: p.demo_url
           })));
-        } else {
-          throw new Error('No projects found');
         }
       } catch (e) {
         console.warn('Could not fetch projects from Supabase, using mock fallback:', e);
@@ -129,7 +127,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       try {
         const { data: evtData, error } = await supabase.from('masterclass_events').select('*');
         if (error) throw error;
-        if (evtData && evtData.length > 0) {
+        if (evtData) {
           setEvents(evtData.map((e: any) => ({
             id: e.id,
             title: e.title,
@@ -143,8 +141,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id),
             waitlisted: false
           })));
-        } else {
-          throw new Error('No events found');
         }
       } catch (e) {
         console.warn('Could not fetch events from Supabase, using mock fallback:', e);
@@ -163,7 +159,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       try {
         const { data: oppData, error } = await supabase.from('opportunities').select('*');
         if (error) throw error;
-        if (oppData && oppData.length > 0) {
+        if (oppData) {
           const mappedJobs = oppData.map((o: any) => {
             const existing = db.getJobs().find(old => old.id === o.id);
             return {
