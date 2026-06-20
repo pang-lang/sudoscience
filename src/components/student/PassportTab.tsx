@@ -21,7 +21,7 @@ export default function PassportTab({ profile, setProfile, showToast, setCurrent
   const [showAddStamp, setShowAddStamp] = useState(false);
 
   return (
-    <div id="view-passport" className="space-y-8 max-w-5xl">
+    <div id="view-passport" className="space-y-8 max-w-7xl mx-auto w-full">
       {/* Top overview row with primary passport mock layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         

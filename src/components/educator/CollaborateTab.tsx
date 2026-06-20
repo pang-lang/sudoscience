@@ -16,7 +16,7 @@ export default function CollaborateTab({ capstones, setCapstones, showToast }: C
   const [lecturerDate, setLecturerDate] = useState('');
 
   return (
-    <div id="educator-view-collaborate" className="space-y-6 max-w-5xl">
+    <div id="educator-view-collaborate" className="space-y-6 max-w-7xl mx-auto w-full">
       
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-200 pb-5">
         <div>

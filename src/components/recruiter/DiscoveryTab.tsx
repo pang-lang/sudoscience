@@ -15,7 +15,7 @@ export default function DiscoveryTab({ candidates, setCandidates, showToast }: D
   const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Candidate | null>(null);
 
   return (
-    <div id="recruiter-view-discovery" className="space-y-6 max-w-5xl">
+    <div id="recruiter-view-discovery" className="space-y-6 max-w-7xl mx-auto w-full">
       
       {/* Header metrics card */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">

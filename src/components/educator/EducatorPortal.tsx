@@ -53,7 +53,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
   };
 
   return (
-    <div id="educator-portal-root" className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
+    <div id="educator-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
       
       {/* Toast */}
       <AnimatePresence>
@@ -71,10 +71,10 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
       </AnimatePresence>
 
       {/* --- SIDEBAR NAVIGATION --- */}
-      <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
+      <aside className="w-64 bg-slate-950 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
         
         {/* Brand layout block */}
-        <div className="p-6 border-b border-slate-800">
+        <div className="p-6 border-b border-slate-900">
           <div className="flex items-center gap-2 mb-1 cursor-pointer font-display" onClick={() => setCurrentTab('content')}>
             <span className="bg-red-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
             <span className="font-bold text-lg text-white">Connect</span>
@@ -83,23 +83,23 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
         </div>
 
         {/* User profile layout */}
-        <div className="p-4 mx-4 my-3 bg-slate-800/50 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 font-extrabold text-blue-600 font-display flex items-center justify-center">
+        <div className="p-4 mx-4 my-3 bg-slate-900 rounded-xl flex items-center gap-3 border border-slate-800">
+          <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 font-bold block flex items-center justify-center text-slate-100 font-display">
             Prof
           </div>
           <div>
             <h4 className="text-white text-xs font-semibold leading-tight">Prof. H. Hartmann</h4>
-            <p className="text-[9px] text-blue-400 font-mono tracking-wider uppercase mt-0.5">Faculty Sponsor</p>
+            <p className="text-[9px] text-red-500 font-mono tracking-wider uppercase mt-0.5">Faculty Sponsor</p>
           </div>
         </div>
 
         {/* Lateral lists */}
-        <div className="flex-1 px-3 py-2 space-y-1">
+        <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           <button 
             id="tab-educator-content"
             onClick={() => setCurrentTab('content')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'content' ? 'bg-blue-650 text-white' : 'hover:bg-slate-800 hover:text-white'
+              currentTab === 'content' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -112,7 +112,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
             id="tab-educator-insights"
             onClick={() => setCurrentTab('insights')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'insights' ? 'bg-blue-650 text-white' : 'hover:bg-slate-800 hover:text-white'
+              currentTab === 'insights' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -128,7 +128,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
             id="tab-educator-collaborate"
             onClick={() => setCurrentTab('collaborate')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'collaborate' ? 'bg-blue-650 text-white' : 'hover:bg-slate-800 hover:text-white'
+              currentTab === 'collaborate' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
             }`}
           >
             <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
         </div>
 
         {/* Swap role back to student sandbox */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
+        <div className="p-4 border-t border-slate-900 space-y-2">
           <button 
             onClick={() => {
               showToast("Switched Sandbox to Student Portal");

@@ -14,7 +14,7 @@ export default function LearningTab({ events, setEvents, materials, showToast, s
   const [materialsTypeFilter, setMaterialsTypeFilter] = useState<'All' | 'Video' | 'Slide' | 'Code'>('All');
 
   return (
-    <div id="view-learn" className="space-y-8 max-w-5xl">
+    <div id="view-learn" className="space-y-8 max-w-7xl mx-auto w-full">
       {/* Header Title context */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
         <div>

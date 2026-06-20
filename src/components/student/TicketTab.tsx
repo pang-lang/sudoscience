@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Ticket, AlertCircle, Check } from 'lucide-react';
+import { Download, Ticket, AlertCircle, Check, Clock, MapPin } from 'lucide-react';
 
 interface TicketTabProps {
   showToast: (msg: string) => void;
@@ -7,9 +7,9 @@ interface TicketTabProps {
 
 export default function TicketTab({ showToast }: TicketTabProps) {
   return (
-    <div id="view-ticket" className="max-w-4xl mx-auto space-y-6">
+    <div id="view-ticket" className="max-w-7xl mx-auto w-full">
       
-      <div className="flex justify-between items-center pb-4 border-b border-slate-200">
+      <div className="flex justify-between items-center pb-4 border-b border-slate-200 mb-6">
         <div>
           <h2 className="font-display font-bold text-2xl text-slate-900">Event Boarding Passes</h2>
           <p className="text-slate-500 text-xs mt-1">Present this QR code ticket on your device at the entry gates</p>
@@ -32,8 +32,10 @@ export default function TicketTab({ showToast }: TicketTabProps) {
         </div>
       </div>
 
-      {/* Envelope Paper Boarding Pass Container */}
-      <div className="relative bg-white border border-slate-250 rounded-3xl overflow-hidden shadow-xl max-w-2xl mx-auto my-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="lg:col-span-8 space-y-6">
+          {/* Envelope Paper Boarding Pass Container */}
+          <div className="relative bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl w-full">
         
         {/* Top styling strip */}
         <div className="bg-red-600 text-white px-6 py-2.5 flex justify-between items-center font-mono">
@@ -131,12 +133,93 @@ export default function TicketTab({ showToast }: TicketTabProps) {
 
       </div>
       
-      {/* Important advisory row alert */}
-      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 max-w-2xl mx-auto">
-        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-        <div className="text-xs text-amber-800 leading-relaxed font-sans">
-          <strong className="font-semibold block">Entry Gate Protocol</strong>
-          Gates open exactly 30 minutes prior to session presentation. Please present physical ID along with this digital check-in queue scan reference. Student kits (if registered) can be collected at Desk F.
+          {/* Important advisory row alert */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex gap-3 w-full">
+            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div className="text-xs text-amber-800 leading-relaxed font-sans">
+              <strong className="font-semibold block">Entry Gate Protocol</strong>
+              Gates open exactly 30 minutes prior to session presentation. Please present physical ID along with this digital check-in queue scan reference. Student kits (if registered) can be collected at Desk F.
+            </div>
+          </div>
+        </div>
+
+        {/* Right Sidebar: Event Info & Schedule */}
+        <div className="lg:col-span-4 space-y-6">
+          
+          {/* Event Schedule */}
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h3 className="font-display font-semibold text-slate-900 mb-5 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-slate-400" />
+              Event Schedule
+            </h3>
+            
+            <div className="space-y-5 relative">
+              {/* Vertical timeline line */}
+              <div className="absolute left-2.5 top-2 bottom-2 w-0.5 bg-slate-100" />
+              
+              <div className="relative flex gap-4">
+                <div className="w-5 h-5 rounded-full bg-slate-100 border-2 border-white shrink-0 flex items-center justify-center z-10 mt-0.5 shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-slate-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-slate-500 block">1:30 PM</span>
+                  <p className="text-sm font-semibold text-slate-800 mt-0.5">Gates Open & Registration</p>
+                </div>
+              </div>
+              
+              <div className="relative flex gap-4">
+                <div className="w-5 h-5 rounded-full bg-red-100 border-2 border-white shrink-0 flex items-center justify-center z-10 mt-0.5 shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-red-600 block">2:00 PM</span>
+                  <p className="text-sm font-semibold text-slate-900 mt-0.5">Keynote Speech</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Dr. Lukas Miller</p>
+                </div>
+              </div>
+
+              <div className="relative flex gap-4">
+                <div className="w-5 h-5 rounded-full bg-slate-100 border-2 border-white shrink-0 flex items-center justify-center z-10 mt-0.5 shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-slate-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-slate-500 block">3:30 PM</span>
+                  <p className="text-sm font-semibold text-slate-800 mt-0.5">Networking & Coffee</p>
+                </div>
+              </div>
+
+              <div className="relative flex gap-4">
+                <div className="w-5 h-5 rounded-full bg-slate-100 border-2 border-white shrink-0 flex items-center justify-center z-10 mt-0.5 shadow-sm">
+                  <div className="w-2 h-2 rounded-full bg-slate-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono text-slate-500 block">4:00 PM</span>
+                  <p className="text-sm font-semibold text-slate-800 mt-0.5">Cohort Assembly</p>
+                  <p className="text-xs text-slate-500 mt-0.5">Lab 3, North Wing</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Location details */}
+          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-sm overflow-hidden relative">
+            <div className="absolute -right-6 -top-6 w-32 h-32 bg-slate-800 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute -left-6 -bottom-6 w-24 h-24 bg-red-600/20 rounded-full blur-2xl pointer-events-none" />
+            
+            <div className="relative z-10">
+              <h3 className="font-display font-semibold mb-3 flex items-center gap-2 text-slate-100">
+                <MapPin className="w-4 h-4 text-red-400" />
+                Getting There
+              </h3>
+              <p className="text-sm text-slate-200 font-medium">Innovation Hub, Berlin</p>
+              <p className="text-xs text-slate-400 mt-1 leading-relaxed">Campus North, Building 4<br/>Alexanderplatz 1, 10178<br/>Berlin, Germany</p>
+              
+              <button className="mt-5 w-full py-2.5 bg-white/10 hover:bg-white/20 text-white rounded-lg text-xs font-semibold transition border border-white/5 cursor-pointer">
+                Get Directions
+              </button>
+            </div>
+          </div>
+
         </div>
       </div>
 

@@ -67,7 +67,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   };
 
   return (
-    <div id="recruiter-portal-root" className="min-h-screen bg-slate-50 flex font-sans text-slate-800">
+    <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
       
       {/* Toast Overlay */}
       <AnimatePresence>
@@ -108,7 +108,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         </div>
 
         {/* Navigation Sidebar list */}
-        <div className="flex-1 px-3 py-2 space-y-1">
+        <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           <button 
             id="tab-recruiter-dashboard"
             onClick={() => setCurrentTab('dashboard')}

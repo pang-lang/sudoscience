@@ -9,7 +9,7 @@ interface PipelineTabProps {
 
 export default function PipelineTab({ candidates, transitionCandidateStage }: PipelineTabProps) {
   return (
-    <div id="recruiter-view-pipeline" className="space-y-6 max-w-5xl">
+    <div id="recruiter-view-pipeline" className="space-y-6 max-w-7xl mx-auto w-full">
       
       <div className="border-b border-slate-200 pb-5">
         <h2 className="font-display font-bold text-2xl text-slate-900">Technical Candidate Placements</h2>

@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  StudentProfile, 
-  Project, 
-  MasterclassEvent, 
-  LearningMaterial, 
-  Opportunity, 
+import {
+  StudentProfile,
+  Project,
+  MasterclassEvent,
+  LearningMaterial,
+  Opportunity,
   NetworkProfile,
   ConnectionChat,
   VisaStamp
 } from '../../types';
-import { 
+import {
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles
 } from 'lucide-react';
 
@@ -27,7 +27,7 @@ interface StudentPortalProps {
 
 export default function StudentPortal({ onLogout }: StudentPortalProps) {
   // ---- MOCK DATA INITIALIZATION ----
-  
+
   // Profile State
   const [profile, setProfile] = useState<StudentProfile>({
     name: 'Sarah Jenkins',
@@ -251,10 +251,10 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
 
   // ---- APP WINDOW STATE RENDERING ----
   const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
-  
+
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  
+
   // Trigger Toast helper
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -262,12 +262,12 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   };
 
   return (
-    <div id="student-portal-root" className="min-h-screen bg-slate-50 flex font-sans select-none text-slate-800">
-      
+    <div id="student-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans select-none text-slate-800">
+
       {/* Toast Notification HUD */}
       <AnimatePresence>
         {toastMessage && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}
@@ -282,7 +282,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
       {/* --- SIDEBAR NAVIGATION --- */}
       <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 shrink-0">
         {/* WE Brand branding */}
-        <div className="p-6 border-b border-slate-800">
+        <div className="p-6 border-b border-slate-900">
           <div className="flex items-center gap-2 mb-1 cursor-pointer" onClick={() => setCurrentTab('passport')}>
             <span className="bg-red-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
             <span className="font-display font-bold text-lg text-white">Connect</span>
@@ -291,54 +291,47 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
         </div>
 
         {/* User Mini profile summary in sidebar */}
-        <div className="p-4 mx-4 my-3 bg-slate-800/50 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-red-600/15 border border-red-500/30 flex items-center justify-center font-bold text-red-500">
+        <div className="p-4 mx-4 my-3 bg-slate-900 rounded-xl flex items-center gap-3 border border-slate-800">
+          <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 font-bold block flex items-center justify-center text-slate-100 font-display">
             SJ
           </div>
           <div className="overflow-hidden">
             <h4 className="text-white text-xs font-semibold truncate">Sarah Jenkins</h4>
-            <p className="text-[10px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
-              Ref: <span className="bg-slate-700/50 px-1 py-0.2 rounded text-[9px]">WE-STUDENT-85</span>
-            </p>
+            <p className="text-[10px] text-red-500 font-mono tracking-wider uppercase mt-0.5">WE-STUDENT-85</p>
           </div>
         </div>
 
         {/* Navigation items */}
-        <div className="flex-1 px-3 py-2 space-y-1">
-          <button 
+        <div className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+          <button
             id="tab-passport"
             onClick={() => setCurrentTab('passport')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'passport' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'passport' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Award className="w-4 h-4" />
               <span>Industry Passport</span>
             </div>
-            <span className="text-[10px] font-mono bg-black/25 px-1.5 py-0.5 rounded text-white">{profile.stamps.length} stamps</span>
           </button>
 
-          <button 
+          <button
             id="tab-portfolio"
             onClick={() => setCurrentTab('portfolio')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'portfolio' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'portfolio' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Layout className="w-4 h-4" />
               <span>Engineering Portfolio</span>
             </div>
-            <span className="text-[10px] font-mono bg-black/25 px-1.5 py-0.5 rounded text-white">{projects.length} files</span>
           </button>
 
-          <button 
+          <button
             id="tab-learn"
             onClick={() => setCurrentTab('learn')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'learn' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'learn' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Clock className="w-4 h-4" />
@@ -349,12 +342,11 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             )}
           </button>
 
-          <button 
+          <button
             id="tab-opportunities"
             onClick={() => setCurrentTab('opportunities')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'opportunities' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'opportunities' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Globe className="w-4 h-4" />
@@ -362,26 +354,23 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             </div>
           </button>
 
-          <button 
+          <button
             id="tab-network"
             onClick={() => setCurrentTab('network')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'network' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'network' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <MessageSquare className="w-4 h-4" />
               <span>Industry Network</span>
             </div>
-            <span className="text-[10px] font-mono bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded-md border border-slate-700">Tinder Mode</span>
           </button>
 
-          <button 
+          <button
             id="tab-ticket"
             onClick={() => setCurrentTab('ticket')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
-              currentTab === 'ticket' ? 'bg-red-600 text-white' : 'hover:bg-slate-800 hover:text-white'
-            }`}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'ticket' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
           >
             <div className="flex items-center gap-3">
               <Ticket className="w-4 h-4" />
@@ -392,22 +381,22 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
         </div>
 
         {/* Global actions at bottom */}
-        <div className="p-4 border-t border-slate-800 space-y-2">
-          <button 
+        <div className="p-4 border-t border-slate-900 space-y-2">
+          <button
             onClick={() => {
               showToast("Switched Sandbox to Recruiter");
-              window.location.hash = "#recruiter"; 
+              window.location.hash = "#recruiter";
               window.location.reload();
             }}
-            className="w-full py-1.5 bg-slate-800 hover:bg-slate-750 text-slate-300 font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer"
+            className="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            <Sparkles className="w-3 h-3 text-red-500" />
+            <Sparkles className="w-3.5 h-3.5 fill-white" />
             SWAP TO RECRUITER
           </button>
-          
-          <button 
+
+          <button
             onClick={onLogout}
-            className="w-full py-1.5 hover:bg-red-950 hover:text-red-400 text-slate-400 font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1 border border-transparent cursor-pointer"
+            className="w-full py-1.5 hover:bg-red-950 hover:text-red-400 text-slate-500 font-medium text-[10px] rounded-lg tracking-wider font-mono flex items-center justify-center gap-1 border border-transparent cursor-pointer"
           >
             LOG OUT SYSTEM
           </button>
@@ -416,7 +405,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
 
       {/* --- MAIN PAGE CONTENT --- */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        
+
         {/* Corporate Top-Status Hub */}
         <header id="student-header" className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between shrink-0">
           <div>
@@ -446,53 +435,53 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
         {/* --- PORTLET WINDOW LAYOUTS --- */}
         <div className="p-8 flex-1">
           {currentTab === 'passport' && (
-            <PassportTab 
-              profile={profile} 
-              setProfile={setProfile} 
-              showToast={showToast} 
-              setCurrentTab={setCurrentTab} 
+            <PassportTab
+              profile={profile}
+              setProfile={setProfile}
+              showToast={showToast}
+              setCurrentTab={setCurrentTab}
             />
           )}
 
           {currentTab === 'portfolio' && (
-            <PortfolioTab 
-              projects={projects} 
-              setProjects={setProjects} 
-              showToast={showToast} 
+            <PortfolioTab
+              projects={projects}
+              setProjects={setProjects}
+              showToast={showToast}
             />
           )}
 
           {currentTab === 'learn' && (
-            <LearningTab 
-              events={events} 
-              setEvents={setEvents} 
-              materials={materials} 
-              showToast={showToast} 
-              setCurrentTab={setCurrentTab} 
+            <LearningTab
+              events={events}
+              setEvents={setEvents}
+              materials={materials}
+              showToast={showToast}
+              setCurrentTab={setCurrentTab}
             />
           )}
 
           {currentTab === 'opportunities' && (
-            <CareersTab 
-              opportunities={opportunities} 
-              setOpportunities={setOpportunities} 
-              showToast={showToast} 
+            <CareersTab
+              opportunities={opportunities}
+              setOpportunities={setOpportunities}
+              showToast={showToast}
             />
           )}
 
           {currentTab === 'network' && (
-            <NetworkTab 
-              networkQueue={networkQueue} 
-              setNetworkQueue={setNetworkQueue} 
-              connections={connections} 
-              setConnections={setConnections} 
-              showToast={showToast} 
+            <NetworkTab
+              networkQueue={networkQueue}
+              setNetworkQueue={setNetworkQueue}
+              connections={connections}
+              setConnections={setConnections}
+              showToast={showToast}
             />
           )}
 
           {currentTab === 'ticket' && (
-            <TicketTab 
-              showToast={showToast} 
+            <TicketTab
+              showToast={showToast}
             />
           )}
         </div>

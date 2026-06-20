@@ -17,7 +17,7 @@ export default function PortfolioTab({ projects, setProjects, showToast }: Portf
   const [newProjComp, setNewProjComp] = useState('');
 
   return (
-    <div id="view-portfolio" className="space-y-6 max-w-5xl">
+    <div id="view-portfolio" className="space-y-6 max-w-7xl mx-auto w-full">
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-slate-200 pb-5">
         <div>
           <h2 className="font-display font-bold text-2xl text-slate-900">Engineering Rigor & Design Portfolio</h2>

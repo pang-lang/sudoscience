@@ -63,7 +63,7 @@ export default function NetworkTab({ networkQueue, setNetworkQueue, connections,
   };
 
   return (
-    <div id="view-network" className="max-w-5xl space-y-6">
+    <div id="view-network" className="max-w-7xl mx-auto w-full space-y-6">
       <div className="border-b border-slate-200 pb-5">
         <h2 className="font-display font-bold text-2xl text-slate-900">WE Academic Matching Queue</h2>
         <p className="text-slate-500 text-xs mt-1">

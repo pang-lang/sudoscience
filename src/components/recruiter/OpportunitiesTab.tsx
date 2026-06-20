@@ -14,7 +14,7 @@ export default function OpportunitiesTab({ postings, setPostings, showToast }: O
   const [formDeadline, setFormDeadline] = useState('');
 
   return (
-    <div id="recruiter-view-opportunities" className="space-y-6 max-w-5xl">
+    <div id="recruiter-view-opportunities" className="space-y-6 max-w-7xl mx-auto w-full">
       
       {/* Layout split: Form Left, Table Right */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

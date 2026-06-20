@@ -8,7 +8,7 @@ interface InsightsTabProps {
 
 export default function InsightsTab({ students }: InsightsTabProps) {
   return (
-    <div id="educator-view-insights" className="space-y-6 max-w-5xl">
+    <div id="educator-view-insights" className="space-y-6 max-w-7xl mx-auto w-full">
       
       <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">
         <div>

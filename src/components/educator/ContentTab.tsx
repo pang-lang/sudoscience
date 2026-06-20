@@ -14,7 +14,7 @@ export default function ContentTab({ materials, setMaterials, showToast }: Conte
   const [newFileSize, setNewFileSize] = useState('');
 
   return (
-    <div id="educator-view-content" className="space-y-6 max-w-5xl">
+    <div id="educator-view-content" className="space-y-6 max-w-7xl mx-auto w-full">
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         

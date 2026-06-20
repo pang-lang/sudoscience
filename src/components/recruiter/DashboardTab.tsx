@@ -3,7 +3,7 @@ import { Users, Award, Calendar, Briefcase } from 'lucide-react';
 
 export default function DashboardTab() {
   return (
-    <div id="recruiter-view-dashboard" className="space-y-8 max-w-5xl">
+    <div id="recruiter-view-dashboard" className="space-y-8 max-w-7xl mx-auto w-full">
       
       {/* Top Row key performance metrics cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">

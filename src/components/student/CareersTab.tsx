@@ -13,7 +13,7 @@ export default function CareersTab({ opportunities, setOpportunities, showToast 
   const [jobSearchQuery, setJobSearchQuery] = useState('');
 
   return (
-    <div id="view-opportunities" className="space-y-6 max-w-5xl">
+    <div id="view-opportunities" className="space-y-6 max-w-7xl mx-auto w-full">
       {/* Filter list options */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">
         <div className="max-w-2xl">
