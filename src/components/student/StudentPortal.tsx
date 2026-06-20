@@ -23,6 +23,8 @@ import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
 import { supabase } from '../../lib/supabase';
+import CoffeeChatTab from './CoffeeChatTab';
+import PublicPortal from '../public/PublicPortal';
 
 interface StudentPortalProps {
   onLogout: () => void;
@@ -326,7 +328,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
   }, [invites]);
 
   // ---- APP WINDOW STATE RENDERING ----
-  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket'>('passport');
+  const [currentTab, setCurrentTab] = useState<'passport' | 'portfolio' | 'learn' | 'opportunities' | 'network' | 'ticket' | 'open-hub'>('passport');
   
   // Custom Toast feedback state
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -455,6 +457,19 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             </div>
             <span className="text-[9px] font-mono bg-slate-800 text-red-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Valid</span>
           </button>
+
+          <button
+            id="tab-open-hub"
+            onClick={() => setCurrentTab('open-hub')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'open-hub' ? 'bg-slate-800 text-white border-l-4 border-indigo-500' : 'hover:bg-slate-900 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="w-4 h-4 text-indigo-400" />
+              <span>Academic Reference</span>
+            </div>
+            <span className="text-[9px] font-mono bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">Ref</span>
+          </button>
         </div>
 
         {/* Global actions at bottom */}
@@ -563,6 +578,10 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
             <TicketTab
               showToast={showToast}
             />
+          )}
+
+          {currentTab === 'open-hub' && (
+            <PublicPortal embedded={true} isEducator={false} />
           )}
         </div>
       </main>

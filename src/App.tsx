@@ -4,6 +4,7 @@ import RoleSelector from './components/shared/RoleSelector';
 import StudentPortal from './components/student/StudentPortal';
 import RecruiterPortal from './components/recruiter/RecruiterPortal';
 import EducatorPortal from './components/educator/EducatorPortal';
+import PublicPortal from './components/public/PublicPortal';
 
 export default function App() {
   const [role, setRole] = useState<UserRole>(null);

@@ -6,13 +6,14 @@ import {
   CapstoneProject 
 } from '../../types';
 import { 
-  Upload, Table, BookOpen, Sparkles
+  Upload, Table, BookOpen, Sparkles, Globe
 } from 'lucide-react';
 
 import ContentTab from './ContentTab';
 import InsightsTab from './InsightsTab';
 import CollaborateTab from './CollaborateTab';
 import { supabase } from '../../lib/supabase';
+import PublicPortal from '../public/PublicPortal';
 
 interface EducatorPortalProps {
   onLogout: () => void;
@@ -93,7 +94,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
   }, []);
 
   // View tabs
-  const [currentTab, setCurrentTab] = useState<'content' | 'insights' | 'collaborate'>('content');
+  const [currentTab, setCurrentTab] = useState<'content' | 'insights' | 'collaborate' | 'open-hub'>('content');
 
   // Toast feedback overlay
   const [toast, setToast] = useState<string | null>(null);
@@ -187,6 +188,20 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
               <span>Collaborate Caps</span>
             </div>
           </button>
+
+          <button 
+            id="tab-educator-open-hub"
+            onClick={() => setCurrentTab('open-hub')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${
+              currentTab === 'open-hub' ? 'bg-slate-800 text-white border-l-4 border-indigo-500' : 'hover:bg-slate-900 hover:text-white'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Globe className="w-4 h-4 text-indigo-400" />
+              <span>Academic Reference</span>
+            </div>
+            <span className="text-[9px] font-mono bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">Ref</span>
+          </button>
         </div>
 
         {/* Swap role back to student sandbox */}
@@ -249,6 +264,10 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
               setCapstones={setCapstones} 
               showToast={showToast} 
             />
+          )}
+
+          {currentTab === 'open-hub' && (
+            <PublicPortal embedded={true} isEducator={true} />
           )}
         </div>
       </main>
