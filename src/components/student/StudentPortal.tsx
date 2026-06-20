@@ -14,6 +14,7 @@ import {
 import { 
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee
 } from 'lucide-react';
+import { db } from '../../utils/db';
 
 import PassportTab from './PassportTab';
 import PortfolioTab from './PortfolioTab';
@@ -88,48 +89,56 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     }
   ]);
 
-  // Masterclasses
-  const [events, setEvents] = useState<MasterclassEvent[]>([
-    {
-      id: 'e1',
-      title: 'Advanced Systems Architecture: Scaling for the Future',
-      speaker: 'Dr. Lukas Miller',
-      speakerTitle: 'WE Chief Architect',
-      location: 'Innovation Hub, Berlin',
-      date: 'Oct 15, 2024',
-      time: '2:00 PM CEST',
-      tag: 'Engineering',
-      attendeesCount: 42,
-      registered: true,
-      waitlisted: false
-    },
-    {
-      id: 'e2',
-      title: 'Navigating Corporate Dynamics as a Junior Engineer',
-      speaker: 'Evelyn Vance',
-      speakerTitle: 'Vice President HR',
-      location: 'Virtual Webinar',
-      date: 'Oct 18, 2024',
-      time: '4:00 PM CEST',
-      tag: 'Leadership',
-      attendeesCount: 156,
-      registered: false,
-      waitlisted: false
-    },
-    {
-      id: 'e3',
-      title: 'Design-First Power Optimizations with RedExpert Tools',
-      speaker: 'Marcus Schmidt',
-      speakerTitle: 'Principal FAE EMEA',
-      location: 'Campus West, Lab 3',
-      date: 'Nov 02, 2024',
-      time: '10:00 AM CET',
-      tag: 'Hardware',
-      attendeesCount: 28,
-      registered: false,
-      waitlisted: false
-    }
-  ]);
+  // Masterclasses synced with DB registrations
+  const [events, setEvents] = useState<MasterclassEvent[]>(() => {
+    const defaultEvents: MasterclassEvent[] = [
+      {
+        id: 'e1',
+        title: 'Advanced Systems Architecture: Scaling for the Future',
+        speaker: 'Dr. Lukas Miller',
+        speakerTitle: 'WE Chief Architect',
+        location: 'Innovation Hub, Berlin',
+        date: 'Oct 15, 2024',
+        time: '2:00 PM CEST',
+        tag: 'Engineering',
+        attendeesCount: 42,
+        registered: false,
+        waitlisted: false
+      },
+      {
+        id: 'e2',
+        title: 'Navigating Corporate Dynamics as a Junior Engineer',
+        speaker: 'Evelyn Vance',
+        speakerTitle: 'Vice President HR',
+        location: 'Virtual Webinar',
+        date: 'Oct 18, 2024',
+        time: '4:00 PM CEST',
+        tag: 'Leadership',
+        attendeesCount: 156,
+        registered: false,
+        waitlisted: false
+      },
+      {
+        id: 'e3',
+        title: 'Design-First Power Optimizations with RedExpert Tools',
+        speaker: 'Marcus Schmidt',
+        speakerTitle: 'Principal FAE EMEA',
+        location: 'Campus West, Lab 3',
+        date: 'Nov 02, 2024',
+        time: '10:00 AM CET',
+        tag: 'Hardware',
+        attendeesCount: 28,
+        registered: false,
+        waitlisted: false
+      }
+    ];
+
+    const regs = db.getRegistrations();
+    return defaultEvents.map(e => ({
+      ...e,
+      registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
+    }));
+  });
 
   // Download Recordings / Docs
   const [materials] = useState<LearningMaterial[]>([
@@ -138,65 +147,60 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     { id: 'm3', fileName: 'Industrial_Sensor_IoT_Boilerplate.zip', type: 'Code', durationOrSize: '12.0 MB', uploadDate: 'Oct 02, 2024', views: 189, downloads: 93 }
   ]);
 
-  // Careers / Opportunities
-  const [opportunities, setOpportunities] = useState<Opportunity[]>([
-    {
-      id: 'o1',
-      title: 'Advanced Robotics Engineering Intern',
-      company: 'TechNova Industrial Systems',
-      location: 'Munich, Germany (Hybrid)',
-      type: 'Internship',
-      starts: 'Oct 2024',
-      deadline: 'Oct 12, 2024',
-      countdown: 'Deadline in 3 days',
-      description: 'Join the robotics development cell. We design high-speed automated component positioning units utilizing custom RFID telemetry grids. Experience in C++ and basic electromechanical assembly is required.',
-      saved: true,
-      applied: false,
-      logoColor: 'from-orange-500 to-rose-600'
-    },
-    {
-      id: 'o2',
-      title: 'Machine Learning Research Assistant',
-      company: 'Institute of Autonomous Systems',
-      location: 'Campus North, Lab 4B',
-      type: 'Hiwi',
-      starts: 'ASAP',
-      deadline: 'Nov 15, 2024',
-      countdown: 'Deadline in 1 month',
-      description: 'Assist in real-time sensor array data evaluation. Develop robust Python models to parse multi-channel accelerometer signals and predict joint failures in automated pneumatic arms.',
-      saved: false,
-      applied: false,
-      logoColor: 'from-blue-600 to-indigo-600 font-mono'
-    },
-    {
-      id: 'o3',
-      title: 'Sustainable Grid Optimization Thesis',
-      company: 'EcoPower Gmbh (Academic Collaboration)',
-      location: 'Berlin (Remote Possible)',
-      type: 'Thesis',
-      starts: 'Nov 2024',
-      deadline: 'Rolling Admission',
-      countdown: 'Apply Early',
-      description: 'Validate efficiency parameters on secondary-side rectifiers and power chokes in medium-voltage microgrids. Thesis will be supervised jointly by Faculty and the lead power engineer at WE.',
-      saved: false,
-      applied: false,
-      logoColor: 'from-emerald-500 to-teal-600'
-    },
-    {
-      id: 'o4',
-      title: 'Future Leaders Engineering Trainee',
-      company: 'Global Dynamics Corp',
-      location: 'Multiple Locations (Global)',
-      type: 'Graduate Program',
-      starts: 'Jan 2025',
-      deadline: 'Dec 01, 2024',
-      countdown: 'Deadline Dec 01',
-      description: 'Elite 24-month rotation program spanning system engineering, operations, and technical business strategy. Includes a 6-month international rotation and direct mentorship from executive board.',
-      saved: false,
-      applied: true,
-      logoColor: 'from-fuchsia-600 to-purple-800'
-    }
-  ]);
+  // Careers / Opportunities loaded from unified DB
+  const [opportunities, setOpportunities] = useState<Opportunity[]>(() => {
+    return db.getStudentOpportunities();
+  });
+
+  // Interceptor for setOpportunities to sync with DB
+  const handleSetOpportunities: React.Dispatch<React.SetStateAction<Opportunity[]>> = (value) => {
+    setOpportunities(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      next.forEach(opp => {
+        const old = prev.find(o => o.id === opp.id);
+        if (old) {
+          if (old.saved !== opp.saved) {
+            db.toggleSaveOpportunity(opp.id);
+          }
+          if (old.applied !== opp.applied && opp.applied) {
+            db.applyToOpportunity(opp.id);
+          }
+        }
+      });
+      // Return fresh database mapping to ensure fully synchronized counts & flags
+      return db.getStudentOpportunities();
+    });
+  };
+
+  // Interceptor for setEvents to write registration back to DB
+  const handleSetEvents: React.Dispatch<React.SetStateAction<MasterclassEvent[]>> = (value) => {
+    setEvents(prev => {
+      const next = typeof value === 'function' ? value(prev) : value;
+      next.forEach(evt => {
+        const old = prev.find(e => e.id === evt.id);
+        if (old && !old.registered && evt.registered) {
+          db.registerForEvent('c_sarah_j', profile.name, evt.id, evt.title);
+          
+          // Re-load updated profile from localstorage since db.registerForEvent updates stamps
+          const updatedProfile = localStorage.getItem('we_connect_student_profile');
+          if (updatedProfile) {
+            try {
+              setProfile(JSON.parse(updatedProfile));
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        }
+      });
+      
+      // Return registrations updated state
+      const regs = db.getRegistrations();
+      return prev.map(e => ({
+        ...e,
+        registered: regs.some(r => r.studentId === 'c_sarah_j' && r.eventId === e.id)
+      }));
+    });
+  };
 
   // Network Stack / Tinder Swipe Cards
   const [networkQueue, setNetworkQueue] = useState<NetworkProfile[]>([
@@ -519,7 +523,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           {currentTab === 'learn' && (
             <LearningTab
               events={events}
-              setEvents={setEvents}
+              setEvents={handleSetEvents}
               materials={materials}
               showToast={showToast}
               setCurrentTab={setCurrentTab}
@@ -529,7 +533,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
           {currentTab === 'opportunities' && (
             <CareersTab
               opportunities={opportunities}
-              setOpportunities={setOpportunities}
+              setOpportunities={handleSetOpportunities}
               showToast={showToast}
             />
           )}
