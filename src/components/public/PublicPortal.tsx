@@ -4,12 +4,16 @@ import {
   Globe, Cpu, Layers, BookOpen, ChevronRight, CheckCircle2, 
   Search, Lightbulb, Sparkles, BookOpenCheck,
   FileText, Download, Info, GraduationCap, Camera, Check, 
-  RotateCcw, Upload, ShoppingBag, Radio, RefreshCw, X
+  RotateCcw, Upload, ShoppingBag, Radio, RefreshCw, X,
+  ChevronLeft
 } from 'lucide-react';
 
 interface PublicPortalProps {
   embedded?: boolean;
   isEducator?: boolean;
+  activeSubTab?: 'home' | 'lab-experiments' | 'catalog' | 'request-parts';
+  setActiveSubTab?: (tab: 'home' | 'lab-experiments' | 'catalog' | 'request-parts') => void;
+  onBackToHome?: () => void;
 }
 
 // ----------------------------------------------------
@@ -197,8 +201,17 @@ const LAB_EXPERIMENTS: LabExperiment[] = [
   }
 ];
 
-export default function PublicPortal({ embedded = false, isEducator = false }: PublicPortalProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'home' | 'lab-experiments' | 'catalog' | 'request-parts'>('home');
+export default function PublicPortal({ 
+  embedded = false, 
+  isEducator = false,
+  activeSubTab: controlledSubTab,
+  setActiveSubTab: controlledSetSubTab,
+  onBackToHome
+}: PublicPortalProps) {
+  const [localSubTab, localSetSubTab] = useState<'home' | 'lab-experiments' | 'catalog' | 'request-parts'>('home');
+
+  const activeSubTab = controlledSubTab !== undefined ? controlledSubTab : localSubTab;
+  const setActiveSubTab = controlledSetSubTab !== undefined ? controlledSetSubTab : localSetSubTab;
 
   // Catalog Parameters
   const [catalogSearch, setCatalogSearch] = useState<string>('');
@@ -361,63 +374,30 @@ export default function PublicPortal({ embedded = false, isEducator = false }: P
           PORTAL HEADER HUD
          ---------------------------------------------------- */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200 mb-8 shrink-0">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="bg-indigo-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
-            <h1 className="font-display font-semibold text-lg text-slate-900 tracking-tight">Academic Reference</h1>
+        <div className="flex flex-wrap items-center gap-4">
+          {activeSubTab !== 'home' && (
+            <button
+              onClick={() => {
+                setActiveSubTab('home');
+                setIsPhotoSearchOpen(false);
+              }}
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 rounded-xl border border-slate-200 cursor-pointer shadow-xs animate-fadeIn"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Back to Reference Dashboard</span>
+            </button>
+          )}
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="bg-indigo-600 text-white px-2 py-0.5 rounded-xs font-black text-sm tracking-tighter">WE</span>
+              <h1 className="font-display font-semibold text-lg text-slate-900 tracking-tight">Academic Reference</h1>
+            </div>
+            <p className="text-slate-500 text-xs mt-1">Würth Elektronik Academic Knowledge & Sample Desk &middot; University Portal</p>
           </div>
-          <p className="text-slate-500 text-xs mt-1">Würth Elektronik Academic Knowledge & Sample Desk &middot; University Portal</p>
         </div>
       </header>
 
-      {/* ----------------------------------------------------
-          SUB-NAVIGATION TABS
-         ---------------------------------------------------- */}
-      <div className="flex flex-wrap gap-2 mb-8 bg-slate-100 p-1.5 rounded-2xl max-w-fit border border-slate-200">
-        <button
-          onClick={() => setActiveSubTab('home')}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeSubTab === 'home' ? 'bg-white text-indigo-600 shadow-sm border-b border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-          }`}
-        >
-          <Layers className="w-4 h-4" />
-          Dashboard
-        </button>
-        {!isEducator && (
-          <button
-            onClick={() => setActiveSubTab('lab-experiments')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-              activeSubTab === 'lab-experiments' ? 'bg-white text-indigo-600 shadow-sm border-b border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            <BookOpen className="w-4 h-4" />
-            Lab Experiments
-          </button>
-        )}
-        <button
-          onClick={() => {
-            setActiveSubTab('catalog');
-            setIsPhotoSearchOpen(false);
-          }}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-            activeSubTab === 'catalog' ? 'bg-white text-indigo-600 shadow-sm border-b border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-          }`}
-        >
-          <Cpu className="w-4 h-4" />
-          Component Catalog
-        </button>
-        {isEducator && (
-          <button
-            onClick={() => setActiveSubTab('request-parts')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition cursor-pointer ${
-              activeSubTab === 'request-parts' ? 'bg-white text-indigo-600 shadow-sm border-b border-indigo-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
-            }`}
-          >
-            <ShoppingBag className="w-4 h-4 text-emerald-600" />
-            Request Parts
-          </button>
-        )}
-      </div>
+
 
       {/* ----------------------------------------------------
           PORTAL SUB-TABS RENDER
@@ -451,118 +431,97 @@ export default function PublicPortal({ embedded = false, isEducator = false }: P
                       <span>Welcome to your Academic Reference desk. Browse technical specifications, access detailed lab sheets, and scan component images to identify footprints and layout guidelines.</span>
                     )}
                   </p>
-                  <div className="flex flex-wrap gap-4">
-                    {isEducator ? (
-                      <>
-                        <button 
-                          onClick={() => setActiveSubTab('request-parts')}
-                          className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-md border-0 flex items-center gap-1.5 cursor-pointer"
-                        >
-                          Request Parts
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setActiveSubTab('catalog')}
-                          className="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-bold transition border border-white/20 flex items-center gap-1.5 cursor-pointer"
-                        >
-                          Explore Catalog
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => setActiveSubTab('catalog')}
-                          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 rounded-xl text-xs font-bold transition shadow-md flex items-center gap-1.5 cursor-pointer text-white border-0"
-                        >
-                          Explore Component Catalog
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => setActiveSubTab('lab-experiments')}
-                          className="px-5 py-2.5 bg-white/10 hover:bg-white/15 text-white rounded-xl text-xs font-bold transition border border-white/20 flex items-center gap-1.5 cursor-pointer"
-                        >
-                          Read Lab Experiments
-                        </button>
-                      </>
-                    )}
-                  </div>
+
                 </div>
               </div>
 
               {/* Highlighting Card features with direct internal links */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div 
-                  onClick={() => {
-                    setActiveSubTab('catalog');
-                    setIsPhotoSearchOpen(false);
-                  }}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
-                >
-                  <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                    <Cpu className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-display font-semibold text-base text-slate-900 mb-2">Component Catalog</h3>
-                  <p className="text-slate-500 text-xs leading-relaxed">
-                    Search and filter essential passive components. Each card displays schematic representations, layout rules, and direct website documentation links.
-                  </p>
-                </div>
-
+              <div className={`grid grid-cols-1 ${isEducator ? 'md:grid-cols-2' : 'md:grid-cols-3'} gap-6`}>
                 {isEducator ? (
-                  <div 
-                    onClick={() => setActiveSubTab('request-parts')}
-                    className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
-                  >
-                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                      <ShoppingBag className="w-5 h-5 text-emerald-600" />
+                  <>
+                    {/* Card 1 for Educator: Parts Procurement */}
+                    <div 
+                      onClick={() => setActiveSubTab('request-parts')}
+                      className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
+                    >
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                        <ShoppingBag className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <h3 className="font-display font-semibold text-base text-slate-900 mb-2">Parts Procurement</h3>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        Request free physical component sample binders and digital sensor evaluation modules for classroom laboratory experiments.
+                      </p>
                     </div>
-                    <h3 className="font-display font-semibold text-base text-slate-900 mb-2">Parts Procurement</h3>
-                    <p className="text-slate-500 text-xs leading-relaxed">
-                      Request free physical component sample binders and digital sensor evaluation modules for classroom laboratory experiments.
-                    </p>
-                  </div>
-                ) : (
-                  <div 
-                    onClick={() => {
-                      setActiveSubTab('catalog');
-                      setIsPhotoSearchOpen(true);
-                      handleResetScan();
-                    }}
-                    className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
-                  >
-                    <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                      <Camera className="w-5 h-5" />
-                    </div>
-                    <h3 className="font-display font-semibold text-base text-slate-900 mb-2">AI Component Scanner</h3>
-                    <p className="text-slate-500 text-xs leading-relaxed">
-                      Take a photo or upload an image of a Würth component on your board to identify its outline and layout rules immediately.
-                    </p>
-                  </div>
-                )}
 
-                <div 
-                  onClick={() => {
-                    if (isEducator) {
-                      setActiveSubTab('catalog');
-                    } else {
-                      setActiveSubTab('lab-experiments');
-                    }
-                  }}
-                  className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
-                >
-                  <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
-                    <BookOpenCheck className="w-5 h-5" />
-                  </div>
-                  <h3 className="font-display font-semibold text-base text-slate-900 mb-2">
-                    {isEducator ? 'University Support' : 'Lab Experiments'}
-                  </h3>
-                  <p className="text-slate-500 text-xs leading-relaxed">
-                    {isEducator ? (
-                      <span>Access Würth Elektronik educational slides, order binders, and request support for your courses and engineering programs.</span>
-                    ) : (
-                      <span>Access step-by-step practical guides, circuit outlines, and layout guidelines for student workspace projects.</span>
-                    )}
-                  </p>
-                </div>
+                    {/* Card 2 for Educator: Component Catalog */}
+                    <div 
+                      onClick={() => {
+                        setActiveSubTab('catalog');
+                        setIsPhotoSearchOpen(false);
+                      }}
+                      className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
+                    >
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                        <Cpu className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-display font-semibold text-base text-slate-900 mb-2">Component Catalog</h3>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        Search and filter essential passive components. Each card displays schematic representations, layout rules, and direct website documentation links.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Card 1 for Student: Component Catalog */}
+                    <div 
+                      onClick={() => {
+                        setActiveSubTab('catalog');
+                        setIsPhotoSearchOpen(false);
+                      }}
+                      className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
+                    >
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                        <Cpu className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-display font-semibold text-base text-slate-900 mb-2">Component Catalog</h3>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        Search and filter essential passive components. Each card displays schematic representations, layout rules, and direct website documentation links.
+                      </p>
+                    </div>
+
+                    {/* Card 2 for Student: AI Component Scanner */}
+                    <div 
+                      onClick={() => {
+                        setActiveSubTab('catalog');
+                        setIsPhotoSearchOpen(true);
+                        handleResetScan();
+                      }}
+                      className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
+                    >
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                        <Camera className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-display font-semibold text-base text-slate-900 mb-2">AI Component Scanner</h3>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        Take a photo or upload an image of a Würth component on your board to identify its outline and layout rules immediately.
+                      </p>
+                    </div>
+
+                    {/* Card 3 for Student: Lab Experiments */}
+                    <div 
+                      onClick={() => setActiveSubTab('lab-experiments')}
+                      className="bg-white border border-slate-200 rounded-2xl p-6 hover:shadow-md hover:border-indigo-500 transition cursor-pointer"
+                    >
+                      <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                        <BookOpenCheck className="w-5 h-5" />
+                      </div>
+                      <h3 className="font-display font-semibold text-base text-slate-900 mb-2">Lab Experiments</h3>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        Access step-by-step practical guides, circuit outlines, and layout guidelines for student workspace projects.
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* WÜRTH ELECTRONIK INDUSTRY NEWS FEED */}

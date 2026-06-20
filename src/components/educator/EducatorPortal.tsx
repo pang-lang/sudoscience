@@ -5,8 +5,8 @@ import {
   StudentPerformance,
   CapstoneProject
 } from '../../types';
-import {
-  Upload, Table, BookOpen, Sparkles, Globe
+import { 
+  Upload, Table, BookOpen, Sparkles, Globe, GraduationCap
 } from 'lucide-react';
 
 import ContentTab from './ContentTab';
@@ -193,7 +193,7 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
               }`}
           >
             <div className="flex items-center gap-3">
-              <Globe className="w-4 h-4 text-indigo-400" />
+              <GraduationCap className="w-4 h-4 text-indigo-400" />
               <span>Academic Reference</span>
             </div>
             <span className="text-[9px] font-mono bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">Ref</span>

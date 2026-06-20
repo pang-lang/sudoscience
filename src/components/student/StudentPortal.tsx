@@ -11,8 +11,9 @@ import {
   VisaStamp,
   CoffeeChatInvite
 } from '../../types';
-import {
-  Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee
+import { 
+  Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee,
+  GraduationCap
 } from 'lucide-react';
 import { db } from '../../utils/db';
 
@@ -345,7 +346,7 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
               }`}
           >
             <div className="flex items-center gap-3">
-              <Globe className="w-4 h-4 text-indigo-400" />
+              <GraduationCap className="w-4 h-4 text-indigo-400" />
               <span>Academic Reference</span>
             </div>
             <span className="text-[9px] font-mono bg-indigo-900 text-indigo-300 px-1.5 py-0.5 rounded uppercase tracking-wider font-semibold">Ref</span>
