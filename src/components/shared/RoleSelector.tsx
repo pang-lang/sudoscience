@@ -1,7 +1,7 @@
-import React from 'react';
-import { motion } from 'motion/react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { UserRole } from '../../types';
-import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight, LogIn, Globe } from 'lucide-react';
+import { GraduationCap, Briefcase, BookOpen, ChevronRight, CornerDownRight, LogIn, Globe, X, Mail, Lock, User } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface RoleSelectorProps {
@@ -10,6 +10,14 @@ interface RoleSelectorProps {
 }
 
 export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorProps) {
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
   const handleGoogleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -20,6 +28,50 @@ export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorPro
     if (error) {
       console.error('Google sign-in error:', error.message);
       alert('Google sign-in failed. Use "Quick Sandbox Login" for demo access.');
+    }
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim() || !password.trim()) {
+      setAuthError('Email and password are required.');
+      return;
+    }
+    setLoading(true);
+    setAuthError(null);
+
+    try {
+      if (authMode === 'signup') {
+        if (!name.trim()) {
+          setAuthError('Full Name is required.');
+          setLoading(false);
+          return;
+        }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: name.trim()
+            }
+          }
+        });
+        if (error) throw error;
+        alert('Registration successful! Please check your email for confirmation.');
+        setAuthMode('signin');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        if (error) throw error;
+        setShowAuthModal(false);
+      }
+    } catch (err: any) {
+      console.error('Email authentication error:', err);
+      setAuthError(err.message || 'An error occurred during authentication.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -62,11 +114,18 @@ export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorPro
                 Quick Sandbox Login
               </button>
               <button 
-                onClick={handleGoogleSignIn}
+                onClick={() => {
+                  setAuthError(null);
+                  setEmail('');
+                  setPassword('');
+                  setName('');
+                  setAuthMode('signin');
+                  setShowAuthModal(true);
+                }}
                 className="px-4 py-1.5 text-xs font-semibold text-white bg-slate-900 rounded-md hover:bg-slate-800 transition shadow-sm hover:shadow-md cursor-pointer flex items-center gap-1.5"
               >
                 <LogIn className="w-3.5 h-3.5" />
-                Sign In with Google
+                Sign In / Register
               </button>
             </>
           )}
@@ -227,6 +286,157 @@ export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorPro
           </p>
         </div>
       </div>
+
+      {/* Auth Modal Overlay */}
+      <AnimatePresence>
+        {showAuthModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowAuthModal(false)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs"
+            />
+
+            {/* Modal Body */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-3xl border border-slate-200 shadow-2xl p-6 md:p-8 max-w-sm w-full relative z-10 flex flex-col gap-5 overflow-hidden font-sans"
+            >
+              {/* Close Button */}
+              <button 
+                onClick={() => setShowAuthModal(false)}
+                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1.5 rounded-full hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {/* Title & Description */}
+              <div className="text-center">
+                <div className="w-10 h-10 rounded-xl bg-red-50 text-red-650 flex items-center justify-center mx-auto mb-3">
+                  <LogIn className="w-5 h-5 text-red-600" />
+                </div>
+                <h3 className="font-display font-bold text-lg text-slate-900">
+                  {authMode === 'signin' ? 'Sign In to WE Connect' : 'Create Account'}
+                </h3>
+                <p className="text-slate-500 text-xs mt-1">
+                  {authMode === 'signin' 
+                    ? 'Enter your email and password to log in.' 
+                    : 'Register for the Academic Excellence Hub.'}
+                </p>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleEmailAuth} className="space-y-4">
+                {authMode === 'signup' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] text-slate-500 font-mono uppercase tracking-wider block font-bold">Full Name</label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input 
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="John Doe"
+                        required
+                        className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-250 rounded-xl text-xs outline-none focus:border-red-500 focus:bg-white transition"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-500 font-mono uppercase tracking-wider block font-bold">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="you@university.edu"
+                      required
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-250 rounded-xl text-xs outline-none focus:border-red-500 focus:bg-white transition"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] text-slate-500 font-mono uppercase tracking-wider block font-bold">Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input 
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-250 rounded-xl text-xs outline-none focus:border-red-500 focus:bg-white transition"
+                    />
+                  </div>
+                </div>
+
+                {authError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-750 text-[10px] font-mono leading-tight text-red-700">
+                    {authError}
+                  </div>
+                )}
+
+                <button 
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? 'Processing...' : authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                </button>
+              </form>
+
+              {/* Separator / Google Provider Fallback */}
+              <div className="relative flex items-center justify-center my-1">
+                <span className="absolute inset-x-0 h-px bg-slate-200" />
+                <span className="relative bg-white px-3 text-[9px] text-slate-400 font-mono uppercase tracking-widest">Or continue with</span>
+              </div>
+
+              <button 
+                onClick={handleGoogleSignIn}
+                className="w-full py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-250 rounded-xl text-xs font-semibold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-xs"
+              >
+                <Globe className="w-4 h-4 text-slate-500" />
+                Google Single Sign-On
+              </button>
+
+              {/* Toggle Mode */}
+              <div className="text-center mt-2 border-t border-slate-100 pt-4">
+                {authMode === 'signin' ? (
+                  <p className="text-[11px] text-slate-500">
+                    Don't have an account?{' '}
+                    <button 
+                      onClick={() => { setAuthMode('signup'); setAuthError(null); }}
+                      className="text-red-650 hover:text-red-700 font-bold hover:underline cursor-pointer"
+                    >
+                      Sign Up
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-slate-500">
+                    Already have an account?{' '}
+                    <button 
+                      onClick={() => { setAuthMode('signin'); setAuthError(null); }}
+                      className="text-red-650 hover:text-red-700 font-bold hover:underline cursor-pointer"
+                    >
+                      Sign In
+                    </button>
+                  </p>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

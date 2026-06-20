@@ -169,9 +169,6 @@ export default function EducatorPortal({ onLogout }: EducatorPortalProps) {
               <Table className="w-4 h-4" />
               <span>Student Performance</span>
             </div>
-            {students.some(s => s.flagged) && (
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-            )}
           </button>
 
           <button

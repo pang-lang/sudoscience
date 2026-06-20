@@ -374,9 +374,6 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
               <Clock className="w-4 h-4" />
               <span>Learning Center</span>
             </div>
-            {events.filter(e => e.registered).length > 0 && (
-              <span className="w-2 h-2 rounded-full bg-red-400" />
-            )}
           </button>
 
           <button
