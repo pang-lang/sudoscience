@@ -6,7 +6,7 @@ import {
   CoffeeChatInvite
 } from '../../types';
 import {
-  Briefcase, Search, BarChart3, Users, Sparkles, X, Lock, Unlock, ShieldAlert, Check, Send, UserCheck
+  Briefcase, Search, BarChart3, Users, Sparkles, X, Lock, Unlock, ShieldAlert, Check, Send, UserCheck, Coffee
 } from 'lucide-react';
 import { db } from '../../utils/db';
 
@@ -14,6 +14,7 @@ import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
+import CoffeeChatTab from './CoffeeChatTab';
 import { supabase } from '../../lib/supabase';
 
 interface RecruiterPortalProps {
@@ -39,12 +40,15 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     return [];
   });
 
-  // Manager Profile settings
-  const [managerProfile, setManagerProfile] = useState<{ name: string, dept: string, research: string }>(() => {
+  // Manager Profile settings (now includes skills for coffee chat matching)
+  const [managerProfile, setManagerProfile] = useState<{ name: string, dept: string, research: string, skills: string[] }>(() => {
     const saved = localStorage.getItem('we_connect_manager_profile');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        // Backfill skills if missing from older localStorage
+        if (!parsed.skills) parsed.skills = ['RFID', 'NFC', 'Embedded Systems', 'Low-Power Design'];
+        return parsed;
       } catch (e) {
         console.error(e);
       }
@@ -52,7 +56,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     return {
       name: 'Dr. Thomas Wey',
       dept: 'R&D Systems & EMC',
-      research: 'Low-Power RFID Tag Sensors & Passive Wireless Power'
+      research: 'Low-Power RFID Tag Sensors & Passive Wireless Power',
+      skills: ['RFID', 'NFC', 'Embedded Systems', 'Low-Power Design', 'PCB Design']
     };
   });
 
@@ -75,7 +80,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // Global CV Modal State
   const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Candidate | null>(null);
 
-  // Match threshold state lifted
+  // Talent Discovery match threshold (for job-position fit, HR use)
   const [matchThreshold, setMatchThreshold] = useState<number>(() => {
     const saved = localStorage.getItem('we_connect_match_threshold');
     return saved ? parseInt(saved, 10) : 80;
@@ -84,6 +89,17 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   const saveThreshold = (val: number) => {
     setMatchThreshold(val);
     localStorage.setItem('we_connect_match_threshold', val.toString());
+  };
+
+  // Coffee Chat threshold — separate from job matching, lower default
+  const [coffeeChatThreshold, setCoffeeChatThreshold] = useState<number>(() => {
+    const saved = localStorage.getItem('we_connect_coffee_threshold');
+    return saved ? parseInt(saved, 10) : 30;
+  });
+
+  const saveCoffeeChatThreshold = (val: number) => {
+    setCoffeeChatThreshold(val);
+    localStorage.setItem('we_connect_coffee_threshold', val.toString());
   };
 
   // Fetch initial data from Supabase & Local DB bootstrap
@@ -149,7 +165,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, []);
 
   // Window navigation
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'coffeechat' | 'pipeline' | 'opportunities'>('dashboard');
 
   // Custom alert feedback
   const [toast, setToast] = useState<string | null>(null);
@@ -409,6 +425,23 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           </button>
 
           <button
+            id="tab-recruiter-coffeechat"
+            onClick={() => setCurrentTab('coffeechat')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'coffeechat' ? 'bg-slate-800 text-white border-l-4 border-amber-500' : 'hover:bg-slate-900 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <Coffee className="w-4 h-4" />
+              <span>Coffee Chat</span>
+            </div>
+            {invites.filter(inv => inv.status === 'accepted').length > 0 && (
+              <span className="text-[10px] bg-amber-500/20 font-mono text-amber-400 px-1.5 py-0.5 rounded-sm">
+                {invites.filter(inv => inv.status === 'accepted').length}
+              </span>
+            )}
+          </button>
+
+          <button
             id="tab-recruiter-opportunities"
             onClick={() => setCurrentTab('opportunities')}
             className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'opportunities' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
@@ -477,13 +510,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               candidates={candidates}
               setCandidates={handleSetCandidates}
               showToast={showToast}
-              invites={invites}
-              setInvites={setInvites}
-              managerProfile={managerProfile}
-              setManagerProfile={setManagerProfile}
               onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
-              matchThreshold={matchThreshold}
-              setMatchThreshold={saveThreshold}
             />
           )}
 
@@ -491,6 +518,20 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             <PipelineTab
               candidates={candidates}
               transitionCandidateStage={transitionCandidateStage}
+            />
+          )}
+
+          {currentTab === 'coffeechat' && (
+            <CoffeeChatTab
+              candidates={candidates}
+              invites={invites}
+              setInvites={setInvites}
+              setCandidates={handleSetCandidates}
+              managerProfile={managerProfile}
+              matchThreshold={coffeeChatThreshold}
+              setMatchThreshold={saveCoffeeChatThreshold}
+              showToast={showToast}
+              onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
             />
           )}
 
