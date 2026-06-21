@@ -110,8 +110,8 @@ function ScoreBadge({ score }: { score: number }) {
     score >= 75
       ? 'bg-red-50 text-red-700 border-red-200'
       : score >= 50
-      ? 'bg-slate-950 text-slate-100 border-slate-900'
-      : 'bg-slate-100 text-slate-500 border-slate-200';
+        ? 'bg-slate-950 text-slate-100 border-slate-900'
+        : 'bg-slate-100 text-slate-500 border-slate-200';
   return (
     <span className={`text-[10px] font-black font-mono px-2 py-0.5 rounded-lg border ${cls}`}>
       {score}%
@@ -153,7 +153,7 @@ export default function CoffeeChatTab({
         // Synchronize message update to Supabase coffee_chat_invites
         supabase.from('coffee_chat_invites').update({
           messages: updatedInvite.messages
-        }).eq('id', inviteId).then(() => {});
+        }).eq('id', inviteId).then(() => { });
 
         return updatedInvite;
       }
@@ -208,7 +208,7 @@ export default function CoffeeChatTab({
       }
     }
     loadInvites();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [managerProfile.name]);
 
   // ── Compute ranked candidate list ─────────────────────────────────────────
@@ -281,6 +281,7 @@ export default function CoffeeChatTab({
             showToast(`✅ ${cand.name.split(' ')[0]} accepted your coffee chat!`);
             setCandidates(cs => {
               const next = cs.map(c => c.id === cand.id ? { ...c, stage: 'Interview Scheduled' as const } : c);
+              db.saveCandidates(next);
               return next;
             });
             return { ...inv, status: 'accepted' as const, studentSharedProfile: true };
@@ -317,6 +318,16 @@ export default function CoffeeChatTab({
             </span>
             <div className="flex items-center gap-2 mt-1">
               <h2 className="font-display font-bold text-2xl text-slate-900">Coffee Chat Matching</h2>
+              {/* Supabase sync status indicator */}
+              <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border flex items-center gap-1 ${dbStatus === 'ok'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  : dbStatus === 'local'
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : 'bg-slate-100 text-slate-500 border-slate-200'
+                }`}>
+                <Database className="w-2.5 h-2.5" />
+                {dbStatus === 'ok' ? 'Supabase synced' : dbStatus === 'local' ? 'Local storage' : 'Connecting…'}
+              </span>
             </div>
             <p className="text-slate-500 text-xs mt-1">
               Students ranked by how well their skills &amp; projects align with <strong>{managerProfile.name}</strong>'s expertise in{' '}
@@ -328,22 +339,20 @@ export default function CoffeeChatTab({
           <div className="flex bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0">
             <button
               onClick={() => setSubTab('matches')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                subTab === 'matches'
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${subTab === 'matches'
                   ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Star className="w-3.5 h-3.5 text-red-600" />
               Candidate Matches
             </button>
             <button
               onClick={() => setSubTab('sent')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${
-                subTab === 'sent'
+              className={`px-4 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition cursor-pointer ${subTab === 'sent'
                   ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
                   : 'text-slate-500 hover:text-slate-900'
-              }`}
+                }`}
             >
               <Coffee className="w-3.5 h-3.5 text-red-650" />
               My Connections
@@ -649,11 +658,10 @@ export default function CoffeeChatTab({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${
-                          inv.status === 'accepted'
+                        <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border ${inv.status === 'accepted'
                             ? 'text-red-700 bg-red-50 border-red-200'
                             : 'text-slate-700 bg-slate-50 border-slate-200'
-                        }`}>
+                          }`}>
                           {inv.status === 'accepted' ? '✓ Accepted' : '⏳ Pending'}
                         </span>
 
@@ -672,11 +680,10 @@ export default function CoffeeChatTab({
 
                             <button
                               onClick={() => setOpenChatInviteId(openChatInviteId === inv.id ? null : inv.id)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                                openChatInviteId === inv.id
+                              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${openChatInviteId === inv.id
                                   ? 'bg-slate-900 text-white border-transparent'
                                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                              }`}
+                                }`}
                             >
                               <MessageSquare className="w-3 h-3" />
                               {openChatInviteId === inv.id ? 'Close Chat' : 'Chat'}
@@ -707,15 +714,13 @@ export default function CoffeeChatTab({
                           {(inv.messages && inv.messages.length > 0) ? (
                             inv.messages.map((msg, mi) => (
                               <div key={mi} className={`flex ${msg.sender === 'employee' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${
-                                  msg.sender === 'employee'
+                                <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${msg.sender === 'employee'
                                     ? 'bg-slate-900 text-white rounded-tr-none shadow shadow-slate-900/10'
                                     : 'bg-slate-100 text-slate-700 border border-slate-200 rounded-tl-none'
-                                }`}>
+                                  }`}>
                                   <p>{msg.text}</p>
-                                  <span className={`text-[8px] block mt-1 text-right ${
-                                    msg.sender === 'employee' ? 'text-slate-400' : 'text-slate-450'
-                                  }`}>{msg.timestamp}</span>
+                                  <span className={`text-[8px] block mt-1 text-right ${msg.sender === 'employee' ? 'text-slate-400' : 'text-slate-450'
+                                    }`}>{msg.timestamp}</span>
                                 </div>
                               </div>
                             ))
