@@ -104,6 +104,29 @@ export default function App() {
       {role === 'educator' && (
         <EducatorPortal onLogout={handleLogout} />
       )}
+      {role === 'community' && (
+        <div className="flex flex-col min-h-screen bg-slate-50">
+          <header className="w-full bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between shadow-xs z-10 shrink-0">
+            <div className="flex items-center gap-1.5 font-display font-bold text-xl tracking-tight text-slate-900">
+              <span className="bg-red-600 text-white px-2 py-0.5 rounded-xs font-black text-lg">WE</span>
+              <span>Connect</span>
+            </div>
+            <button 
+              onClick={() => handleSelectRole(null)}
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 transition"
+            >
+              Back to Hub
+            </button>
+          </header>
+          <div className="flex-1 overflow-auto">
+            <PublicPortal 
+              embedded={false} 
+              activeSubTab="community" 
+              onBackToHome={() => handleSelectRole(null)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

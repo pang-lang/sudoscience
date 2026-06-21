@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { LearningMaterial } from '../../types';
-import { Upload, Trash2 } from 'lucide-react';
+import { Upload, Trash2, MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface ContentTabProps {
@@ -190,6 +190,65 @@ export default function ContentTab({ materials, setMaterials, showToast }: Conte
           </div>
         </div>
 
+      </div>
+
+      {/* --- INCOMING STUDENT QUESTIONS --- */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm">
+        <h3 className="font-display font-semibold text-lg text-slate-900 flex items-center gap-2 mb-1">
+          <MessageSquare className="w-5 h-5 text-red-500" />
+          Incoming Student Questions
+        </h3>
+        <p className="text-slate-500 text-xs mb-6">Direct messages from students regarding your uploaded session materials.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="border border-slate-200 rounded-2xl p-5 bg-slate-50 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-red-100 text-red-800 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">New Question</span>
+                <span className="text-[10px] text-slate-400 font-mono">10:05 AM</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-900 mb-1">Regarding: EMC_Shielding_Principles.pdf</p>
+              <p className="text-xs text-slate-600 italic">"Hi! Could you clarify how the MagI3C power module handles thermal dissipation under full load as shown on slide 12?"</p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-200 flex items-center gap-3">
+              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150" alt="Student" className="w-8 h-8 rounded-full border border-slate-300" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-slate-900">Alex Chen</p>
+                <p className="text-[10px] text-slate-500">TU Munich &middot; Match Score: 92</p>
+              </div>
+              <button 
+                onClick={() => showToast('Opening chat interface...')}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-semibold transition cursor-pointer"
+              >
+                Reply
+              </button>
+            </div>
+          </div>
+
+          <div className="border border-slate-200 rounded-2xl p-5 bg-slate-50 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="bg-slate-200 text-slate-600 text-[9px] font-bold px-2 py-0.5 rounded uppercase tracking-widest">Unread</span>
+                <span className="text-[10px] text-slate-400 font-mono">Yesterday, 14:30 PM</span>
+              </div>
+              <p className="text-xs font-semibold text-slate-900 mb-1">Regarding: Wireless_Power_Transfer_Coils.pdf</p>
+              <p className="text-xs text-slate-600 italic">"Hello, I was wondering how the coupling coefficient affects the efficiency of the WE-WPCC coils described on page 4?"</p>
+            </div>
+            <div className="mt-4 pt-4 border-t border-slate-200 flex items-center gap-3">
+              <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150" alt="Student" className="w-8 h-8 rounded-full border border-slate-300 object-cover" />
+              <div className="flex-1">
+                <p className="text-xs font-bold text-slate-900">Sarah Jenkins</p>
+                <p className="text-[10px] text-slate-500">TU Munich &middot; Match Score: 88</p>
+              </div>
+              <button 
+                onClick={() => showToast('Opening chat interface...')}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-[10px] font-semibold transition cursor-pointer"
+              >
+                Reply
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>

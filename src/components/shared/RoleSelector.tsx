@@ -108,10 +108,10 @@ export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorPro
           ) : (
             <>
               <button 
-                onClick={() => onSelectRole('student')}
+                onClick={() => onSelectRole('community')}
                 className="text-xs font-medium text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
               >
-                Quick Sandbox Login
+                Community Forum
               </button>
               <button 
                 onClick={() => {
@@ -276,7 +276,6 @@ export default function RoleSelector({ onSelectRole, authUser }: RoleSelectorPro
               <span className="text-[10px] font-mono text-slate-400 text-center block">Access: WE Academy & University Educators</span>
             </div>
           </motion.div>
-
         </div>
 
         {/* Footer Brand Credit */}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MasterclassEvent, LearningMaterial } from '../../types';
-import { Clock, MessageSquare, MapPin, CheckCircle2, Ticket, Video, FileText, Download } from 'lucide-react';
+import { Clock, MessageSquare, MapPin, CheckCircle2, Ticket, Video, FileText, Download, X } from 'lucide-react';
 
 interface LearningTabProps {
   events: MasterclassEvent[];
@@ -12,6 +12,7 @@ interface LearningTabProps {
 
 export default function LearningTab({ events, setEvents, materials, showToast, setCurrentTab }: LearningTabProps) {
   const [materialsTypeFilter, setMaterialsTypeFilter] = useState<'All' | 'Video' | 'Slide' | 'Code'>('All');
+  const [showChatForMaterial, setShowChatForMaterial] = useState<LearningMaterial | null>(null);
 
   return (
     <div id="view-learn" className="space-y-8 max-w-7xl mx-auto w-full">
@@ -162,13 +163,20 @@ export default function LearningTab({ events, setEvents, materials, showToast, s
                     </td>
                     <td className="px-4 py-3.5 text-slate-500 font-mono">{mat.durationOrSize}</td>
                     <td className="px-4 py-3.5 text-slate-400 font-mono">{mat.uploadDate}</td>
-                    <td className="px-4 py-3.5 text-right">
+                    <td className="px-4 py-3.5 text-right flex justify-end gap-2">
+                      <button 
+                        onClick={() => setShowChatForMaterial(mat)}
+                        className="px-3 py-1.5 border border-slate-200 hover:border-slate-800 hover:text-slate-800 rounded-lg text-slate-600 transition flex items-center gap-1 cursor-pointer font-semibold text-[11px]"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5" />
+                        Ask Question
+                      </button>
                       <button 
                         onClick={() => showToast(`Triggering background transfer: ${mat.fileName}...`)}
-                        className="px-3 py-1.5 border border-slate-200 hover:border-red-600 hover:text-red-600 rounded-lg text-slate-600 transition flex items-center gap-1 ml-auto cursor-pointer font-semibold text-[11px]"
+                        className="px-3 py-1.5 border border-slate-200 hover:border-red-600 hover:text-red-600 rounded-lg text-slate-600 transition flex items-center gap-1 cursor-pointer font-semibold text-[11px]"
                       >
                         <Download className="w-3.5 h-3.5" />
-                        Download Bundle
+                        Download
                       </button>
                     </td>
                   </tr>
@@ -178,6 +186,72 @@ export default function LearningTab({ events, setEvents, materials, showToast, s
           </div>
         </div>
       </div>
+
+      {/* --- EDUCATOR CHAT SLIDE-OVER --- */}
+      {showChatForMaterial && (
+        <div className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-50 flex justify-end">
+          <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-300">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <div>
+                <h3 className="font-display font-semibold text-base text-slate-900">Educator Q&A</h3>
+                <p className="text-[10px] text-slate-500 font-mono mt-0.5">Regarding: {showChatForMaterial.fileName}</p>
+              </div>
+              <button 
+                onClick={() => setShowChatForMaterial(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-200 text-slate-500 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            
+            <div className="flex-1 p-6 overflow-y-auto bg-slate-50/50 space-y-4">
+              <div className="flex justify-start">
+                <div className="max-w-[85%] bg-white border border-slate-200 rounded-2xl rounded-tl-none p-4 shadow-sm">
+                  <p className="text-xs text-slate-700 leading-relaxed">
+                    Hello! I'm {showChatForMaterial.educatorName || 'the author'} of this material. What questions do you have about the concepts covered in this session?
+                  </p>
+                  <span className="text-[9px] text-slate-400 block mt-2 font-mono">10:00 AM</span>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <div className="max-w-[85%] bg-red-600 border border-red-700 rounded-2xl rounded-tr-none p-4 shadow-md shadow-red-500/20 text-white">
+                  <p className="text-xs leading-relaxed">
+                    {showChatForMaterial.fileName.includes('EMC') || showChatForMaterial.fileName.includes('Shielding') ? (
+                      "Hi! Could you clarify how the MagI3C power module handles thermal dissipation under full load as shown on slide 12?"
+                    ) : showChatForMaterial.fileName.includes('Wireless') || showChatForMaterial.fileName.includes('Power') ? (
+                      "Hello, I was wondering how the coupling coefficient affects the efficiency of the WE-WPCC coils described on page 4?"
+                    ) : showChatForMaterial.fileName.includes('Antenna') || showChatForMaterial.fileName.includes('RFID') ? (
+                      "Hi! For the 13.56MHz RFID design, what's the recommended matching circuit topology you mentioned in the lab?"
+                    ) : (
+                      "Hi, I had a quick question about the parameter calculations shown in this document. Is there a specific tolerance we should assume?"
+                    )}
+                  </p>
+                  <span className="text-[9px] text-red-200 block mt-2 font-mono">10:05 AM</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 bg-white">
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  placeholder="Type your follow-up question..." 
+                  className="flex-1 px-4 py-2.5 bg-slate-100 border-transparent focus:border-red-400 focus:bg-white rounded-xl text-xs outline-none transition"
+                />
+                <button 
+                  onClick={() => {
+                    showToast('Question sent to educator! They will respond shortly.');
+                    setShowChatForMaterial(null);
+                  }}
+                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs rounded-xl transition cursor-pointer"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

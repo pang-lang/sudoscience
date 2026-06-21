@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { NetworkProfile, ConnectionChat, CoffeeChatInvite } from '../../types';
+import { NetworkProfile, ConnectionChat, MentorChat } from '../../types';
 import {
   X, Heart, MessageSquare, RotateCcw, Coffee, ShieldAlert, Check, Lock, Unlock,
   Sparkles, ChevronRight, Briefcase, Target, Star, RefreshCw
@@ -12,8 +12,8 @@ interface NetworkTabProps {
   connections: ConnectionChat[];
   setConnections: React.Dispatch<React.SetStateAction<ConnectionChat[]>>;
   showToast: (msg: string) => void;
-  invites: CoffeeChatInvite[];
-  setInvites: React.Dispatch<React.SetStateAction<CoffeeChatInvite[]>>;
+  invites: MentorChat[];
+  setInvites: React.Dispatch<React.SetStateAction<MentorChat[]>>;
 }
 
 // Score badge color
@@ -38,15 +38,16 @@ export default function NetworkTab({
 
   const [subTab, setSubTab] = useState<'matches' | 'coffee'>('matches');
 
-  // Synchronize invite messages to connections state when invites change
+  // Synchronize invite messages to connections state when invites change.
+  // We match on mc_ prefixed IDs (the new consistent pattern), plus legacy prefixes for backward compat.
   React.useEffect(() => {
     setConnections(prev => {
       let changed = false;
       const next = prev.map(chat => {
         const matchingInvite = invites.find(inv =>
-          `chat_${inv.id}` === chat.id ||
-          `coffee_${inv.id}` === chat.id ||
-          `coffee_${inv.candidateId}_${inv.id}` === chat.id
+          chat.id === `mc_${inv.id}` ||
+          chat.id === `chat_${inv.id}` ||
+          chat.id === `coffee_${inv.id}`
         );
         if (matchingInvite && matchingInvite.messages && matchingInvite.messages.length > 0) {
           const mappedMsgs = matchingInvite.messages.map(m => ({
@@ -89,8 +90,9 @@ export default function NetworkTab({
       return chat;
     }));
 
-    // 2. Sync to invites if it's a coffee chat
+    // 2. Sync to invites if it's a mentor chat — match on any ID pattern
     const matchingInvite = invites.find(inv =>
+      `mc_${inv.id}` === activeChatId ||
       `chat_${inv.id}` === activeChatId ||
       `coffee_${inv.id}` === activeChatId ||
       inv.managerName === connections.find(c => c.id === activeChatId)?.name
@@ -164,15 +166,15 @@ export default function NetworkTab({
     setSwipeDir('right');
 
     setTimeout(() => {
-      showToast(`☕ Coffee Chat unlocked with ${match.name}!`);
+      showToast(`☕ Mentor Chat unlocked with ${match.name}!`);
 
       // Create a ConnectionChat
-      const chatId = `coffee_${match.id}`;
+      const chatId = `mc_inv_${match.id}`;
       const chatExists = connections.some(c => c.id === chatId);
       if (!chatExists) {
         const openingMsg = match.matchReason
-          ? `Hi! I noticed your work on "${match.interestedInProject}" — ${match.matchReason} Would love to have a quick coffee chat!`
-          : `Hi! I came across your profile and would love to have a quick coffee chat to discuss your projects.`;
+          ? `Hi! I noticed your work on "${match.interestedInProject}" — ${match.matchReason} Would love to have a quick mentor chat!`
+          : `Hi! I came across your profile and would love to have a quick mentor chat to discuss your projects.`;
 
         const newChat: ConnectionChat = {
           id: chatId,
@@ -187,9 +189,9 @@ export default function NetworkTab({
         };
         setConnections(prev => [newChat, ...prev]);
 
-        // Also create an accepted invite so it shows in Coffee Chat Desk history
-        const newInvite: CoffeeChatInvite = {
-          id: `inv_${match.id}_${Date.now()}`,
+        // Create a pending invite using consistent mc_ prefix
+        const newInvite: MentorChat = {
+          id: `mc_${match.id}_${Date.now()}`,
           candidateId: 'c_sarah_j',
           managerName: match.name,
           managerDept: match.university || match.role,
@@ -210,12 +212,13 @@ export default function NetworkTab({
 
   // ── Invite handlers ───────────────────────────────────────────────────────
 
-  const handleAcceptInvite = (invite: CoffeeChatInvite) => {
+  const handleAcceptInvite = (invite: MentorChat) => {
     setInvites(prev => prev.map(inv =>
       inv.id === invite.id ? { ...inv, status: 'accepted', studentSharedProfile: true } : inv
     ));
 
-    const chatId = `chat_${invite.id}`;
+    // Use consistent mc_ prefix for the connection chat ID
+    const chatId = `mc_${invite.id}`;
     const chatExists = connections.some(c => c.id === chatId);
     if (!chatExists) {
       const newChat: ConnectionChat = {
@@ -224,16 +227,16 @@ export default function NetworkTab({
         role: invite.managerDept,
         imageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=200',
         online: true,
-        lastMessage: "Coffee chat match accepted! Let's schedule a time to meet.",
+        lastMessage: "Mentor chat accepted! Let's schedule a time to connect.",
         messages: [
-          { sender: 'other' as const, text: `Hi! Thanks for accepting the coffee chat invite. I'm very interested in your work. Let's arrange a quick call.`, timestamp: invite.timestamp }
+          { sender: 'other' as const, text: `Hi! Thanks for accepting the mentor chat invite. I'm very interested in your work. Let's arrange a quick call.`, timestamp: invite.timestamp }
         ]
       };
       setConnections(prev => [newChat, ...prev]);
       setActiveChatId(chatId);
     }
     setSubTab('coffee');
-    showToast("Coffee chat match accepted!");
+    showToast('Mentor chat accepted!');
   };
 
   const handleDeclineInvite = (inviteId: string) => {

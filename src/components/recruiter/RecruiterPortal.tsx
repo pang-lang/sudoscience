@@ -3,19 +3,20 @@ import { motion, AnimatePresence } from 'motion/react';
 import {
   Candidate,
   PostedOpportunity,
-  CoffeeChatInvite
+  MentorChat
 } from '../../types';
 import {
   Briefcase, Search, BarChart3, Users, Sparkles, X, Lock, Unlock, ShieldAlert, Check, Send, UserCheck, Coffee, MessageSquare, FolderOpen
 } from 'lucide-react';
 import { db, UnifiedJob } from '../../utils/db';
 import { supabase } from '../../lib/supabase';
+import { createMentorChatInvite } from '../../utils/mentorChatHelpers';
 
 import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
-import CoffeeChatTab from './CoffeeChatTab';
+import MentorChatTab from './MentorChatTab';
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -30,8 +31,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   // Event Registrations State
   const [registrations, setRegistrations] = useState<any[]>([]);
 
-  // Coffee Chat Invites state with LocalStorage sync
-  const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
+  // Mentor Chat state with LocalStorage sync
+  const [invites, setInvites] = useState<MentorChat[]>(() => {
     const saved = localStorage.getItem('we_connect_chat_invites');
     if (saved) {
       try {
@@ -40,7 +41,31 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         console.error(e);
       }
     }
-    return [];
+    return [
+      {
+        id: 'chat_sarah_1',
+        candidateId: 'c_sarah_j',
+        managerName: 'Recruiter User',
+        managerDept: 'Talent Acquisition',
+        managerResearch: 'University Relations',
+        status: 'accepted',
+        matchScore: 92,
+        messages: [
+          { sender: 'employee', text: 'Hi Sarah! I noticed your excellent engagement in the EMC Academy Seminar.', timestamp: 'Yesterday, 14:20 PM' },
+          { sender: 'user', text: 'Thanks! I really enjoyed learning about the MagI3C power module.', timestamp: 'Yesterday, 15:05 PM' }
+        ]
+      },
+      {
+        id: 'chat_omar_2',
+        candidateId: 'c_omar_h',
+        managerName: 'Recruiter User',
+        managerDept: 'Hardware Engineering',
+        managerResearch: 'Wireless Power',
+        status: 'pending',
+        matchScore: 88,
+        messages: []
+      }
+    ];
   });
 
   // Manager Profile settings (now includes skills for coffee chat matching)
@@ -91,7 +116,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
 
   // Global CV Modal State
   const [selectedCandidateForModal, setSelectedCandidateForModal] = useState<Candidate | null>(null);
-  const [chatMessage, setChatMessage] = useState('');
 
   // Talent Discovery match threshold (for job-position fit, HR use)
   const [matchThreshold, setMatchThreshold] = useState<number>(() => {
@@ -102,17 +126,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   const saveThreshold = (val: number) => {
     setMatchThreshold(val);
     localStorage.setItem('we_connect_match_threshold', val.toString());
-  };
-
-  // Coffee Chat threshold — separate from job matching, lower default
-  const [coffeeChatThreshold, setCoffeeChatThreshold] = useState<number>(() => {
-    const saved = localStorage.getItem('we_connect_coffee_threshold');
-    return saved ? parseInt(saved, 10) : 30;
-  });
-
-  const saveCoffeeChatThreshold = (val: number) => {
-    setCoffeeChatThreshold(val);
-    localStorage.setItem('we_connect_coffee_threshold', val.toString());
   };
 
   useEffect(() => {
@@ -130,8 +143,54 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             score: c.score || c.engagementScore || 85,
             stage: c.stage || 'Talent Pool',
             avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-            saved: c.saved || false
+            saved: c.saved || false,
+            projects: c.projects || [
+              {
+                title: 'Academic Capstone / Coursework',
+                description: `Applied learning project focusing on ${c.skills && c.skills.length > 0 ? c.skills[0] : 'Engineering'}.`,
+                tech: c.skills || [],
+                components: c.skills?.some((s: string) => s.toLowerCase().includes('rf') || s.toLowerCase().includes('power') || s.toLowerCase().includes('hardware'))
+                  ? ['MagI3C Power Module', 'REDCUBE Terminals']
+                  : ['WE-KI Ceramic Inductors']
+              }
+            ]
           }));
+          if (!mappedCandidates.some(c => c.id === 'c_sarah_j')) {
+            mappedCandidates.push({
+              id: 'c_sarah_j',
+              name: 'Sarah Jenkins',
+              university: 'TU Munich',
+              skills: ['Embedded Systems', 'IoT Sensors', 'Wireless Power'],
+              score: 92,
+              stage: 'Recruiter Review',
+              avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
+              saved: true,
+              projects: [{
+                title: 'Smart Inventory Tracker',
+                description: 'IoT sensor network for real-time inventory tracking.',
+                tech: ['Embedded C', 'LoRaWAN'],
+                components: ['WSEN Thermals', 'MagI3C Power Module']
+              }]
+            });
+          }
+          if (!mappedCandidates.some(c => c.id === 'c_omar_h')) {
+            mappedCandidates.push({
+              id: 'c_omar_h',
+              name: 'Omar Hassan',
+              university: 'RWTH Aachen',
+              skills: ['RFID Systems', 'Antenna Design', 'RF Engineering'],
+              score: 88,
+              stage: 'Talent Pool',
+              avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150',
+              saved: false,
+              projects: [{
+                title: 'RFID Access System',
+                description: 'Secure access control using RFID tags and custom antennas.',
+                tech: ['Altium', 'C++'],
+                components: ['WE-KI Ceramic Inductors', 'WE-RFI Ferrite Beads']
+              }]
+            });
+          }
           setCandidates(mappedCandidates);
         }
       } catch (e) {
@@ -141,7 +200,16 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       // 2. Fetch Postings, Applications, and Registrations from Supabase
       try {
         const { data: regsData, error: regsError } = await supabase.from('event_registrations').select('*');
-        if (!regsError && regsData) setRegistrations(regsData);
+        if (!regsError && regsData) {
+          const augmentedRegs = [...regsData];
+          if (!augmentedRegs.some(r => r.student_id === 'c_sarah_j' && r.event_id === 'e1')) {
+            augmentedRegs.push({ student_id: 'c_sarah_j', event_id: 'e1' });
+            augmentedRegs.push({ student_id: 'c_omar_h', event_id: 'e1' });
+            augmentedRegs.push({ student_id: 'c_sarah_j', event_id: 'e2' });
+            augmentedRegs.push({ student_id: 'c_omar_h', event_id: 'e3' });
+          }
+          setRegistrations(augmentedRegs);
+        }
 
         const { data: jobsData, error: jobsErr } = await supabase.from('opportunities').select('*');
         const { data: appsData } = await supabase.from('opportunity_applications').select('*');
@@ -201,7 +269,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, []);
 
   // Window navigation
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'coffeechat' | 'pipeline' | 'opportunities'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'mentorchat' | 'pipeline' | 'opportunities'>('dashboard');
 
   // Custom alert feedback
   const [toast, setToast] = useState<string | null>(null);
@@ -319,45 +387,65 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     }
   };
 
+  // --- MOCK CHAT INJECTION ---
+  useEffect(() => {
+    if (candidates.length > 0) {
+      setInvites(prev => {
+        // If there's already an active chat with messages, do nothing
+        if (prev.some(inv => inv.messages && inv.messages.length > 0)) {
+          return prev;
+        }
+
+        const mockCandidate = candidates.find(c => c.name.includes('Daniel Kim')) || candidates[0];
+        if (!mockCandidate) return prev;
+
+        const mockChat: MentorChat = {
+          id: 'mc_mock_interaction_1',
+          candidateId: mockCandidate.id,
+          managerName: 'Würth Talent Desk',
+          managerDept: 'HR',
+          managerResearch: '',
+          score: mockCandidate.score,
+          status: 'accepted',
+          studentSharedProfile: true,
+          managerSharedProfile: true,
+          timestamp: 'Today, 10:00 AM',
+          messages: [
+            { sender: 'employee', text: `Hi ${mockCandidate.name.split(' ')[0]}, I was really impressed by your background in PCB Design. Would you be open to a quick chat about our Graduate Program?`, timestamp: '10:00 AM' },
+            { sender: 'student', text: 'Hi! Thank you for reaching out. Yes, I would definitely be interested. Your recent work on Low-Power Design is exactly what I want to specialize in.', timestamp: '10:15 AM' },
+            { sender: 'employee', text: 'That is great to hear! Let me send you a link to schedule a 15-minute call for next week.', timestamp: '10:18 AM' }
+          ]
+        };
+
+        // Don't duplicate if already added
+        if (prev.some(p => p.id === mockChat.id)) return prev;
+        return [mockChat, ...prev];
+      });
+    }
+  }, [candidates]);
+
   // --- CANDIDATE MODAL HELPERS ---
   const handleSendInvite = (cand: Candidate) => {
     const existing = invites.find(inv => inv.candidateId === cand.id);
     if (existing) {
-      showToast(`An invite is already ${existing.status} for this candidate.`);
+      showToast(`An invite is already ${existing.status === 'pending' ? 'pending' : existing.status} for this candidate.`);
       return;
     }
 
-    const inviteId = `invite_${Date.now()}_${cand.id}`;
-    const newInvite: CoffeeChatInvite = {
-      id: inviteId,
-      candidateId: cand.id,
-      managerName: managerProfile.name,
-      managerDept: managerProfile.dept,
-      managerResearch: managerProfile.research,
-      score: cand.score,
-      status: 'pending',
-      studentSharedProfile: false,
-      managerSharedProfile: false,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
+    const newInvite = createMentorChatInvite(cand.id, managerProfile, cand.score);
     setInvites(prev => [...prev, newInvite]);
-    showToast(`Coffee Chat Invite dispatched to ${cand.name.split(' ')[0]}!`);
+    showToast(`Mentor Chat invite sent to ${cand.name.split(' ')[0]}!`);
 
+    // Simulate acceptance for non-demo students after 5s
     if (cand.id !== 'c_sarah_j') {
       setTimeout(() => {
         setInvites(prev => prev.map(inv => {
-          if (inv.id === inviteId) {
-            showToast(`Match Alert: ${cand.name.split(' ')[0]} accepted your coffee chat!`);
-            setCandidates(cands => {
-              const next = cands.map(c => c.id === cand.id ? { ...c, stage: 'Interview Scheduled' as const } : c);
-              return next;
-            });
-            return {
-              ...inv,
-              status: 'accepted' as const,
-              studentSharedProfile: true
-            };
+          if (inv.id === newInvite.id) {
+            showToast(`✅ ${cand.name.split(' ')[0]} accepted your mentor chat!`);
+            setCandidates(cands =>
+              cands.map(c => c.id === cand.id ? { ...c, stage: 'Interview Scheduled' as const } : c)
+            );
+            return { ...inv, status: 'accepted' as const, studentSharedProfile: true };
           }
           return inv;
         }));
@@ -365,45 +453,15 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     }
   };
 
-  const handleToggleManagerShare = (inviteId: string) => {
-    setInvites(prev => prev.map(inv => {
-      if (inv.id === inviteId) {
-        const nextState = !inv.managerSharedProfile;
-        showToast(nextState ? "Shared contact details with candidate" : "Revoked contact details sharing");
-        return { ...inv, managerSharedProfile: nextState };
-      }
-      return inv;
-    }));
-  };
-
-  const handleSendOffer = (candName: string) => {
-    showToast(`Internship Placement Offer dispatched to ${candName}!`);
-  };
-
-  const handleSendChatMessage = (inviteId: string) => {
-    if (!chatMessage.trim()) return;
-    setInvites(prev => prev.map(inv => {
-      if (inv.id === inviteId) {
-        const newMsg = { sender: 'employee' as const, text: chatMessage.trim(), timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-        return { ...inv, messages: [...(inv.messages || []), newMsg] };
-      }
-      return inv;
-    }));
-    setChatMessage('');
-    showToast('Message sent');
-  };
-
-  const getMaskedName = (cand: Candidate) => {
-    const initials = cand.name.split(' ').map(n => n[0]).join('');
-    return `Candidate #${initials}${cand.score}`;
-  };
-
   const activeInvite = selectedCandidateForModal
     ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
     : null;
 
-  const isProfileShared = activeInvite?.status === 'accepted';
   const isAnonymized = false;
+  const getMaskedName = (cand: Candidate) => {
+    const initials = cand.name.split(' ').map(n => n[0]).join('');
+    return `Candidate #${initials}${cand.score}`;
+  };
 
   return (
     <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
@@ -485,14 +543,14 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           </button>
 
           <button
-            id="tab-recruiter-coffeechat"
-            onClick={() => setCurrentTab('coffeechat')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'coffeechat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+            id="tab-recruiter-mentorchat"
+            onClick={() => setCurrentTab('mentorchat')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'mentorchat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
               }`}
           >
             <div className="flex items-center gap-3">
               <Coffee className="w-4 h-4" />
-              <span>Coffee Chat</span>
+              <span>Mentor Chats</span>
             </div>
           </button>
 
@@ -576,15 +634,13 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             />
           )}
 
-          {currentTab === 'coffeechat' && (
-            <CoffeeChatTab
+          {currentTab === 'mentorchat' && (
+            <MentorChatTab
               candidates={candidates}
               invites={invites}
               setInvites={setInvites}
               setCandidates={handleSetCandidates}
               managerProfile={managerProfile}
-              matchThreshold={coffeeChatThreshold}
-              setMatchThreshold={saveCoffeeChatThreshold}
               showToast={showToast}
               onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
             />
@@ -705,88 +761,48 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                       (ms: string) => ms.toLowerCase() === s.toLowerCase()
                     );
                     return (
-                      <span 
-                        key={idx} 
-                        className={`text-xs px-2.5 py-1 rounded-md font-semibold border ${
-                          isMatched 
-                            ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10' 
-                            : 'bg-white border-slate-200 text-slate-700'
-                        }`}
-                      >
+                        <span 
+                          key={idx} 
+                          className={`inline-flex items-center whitespace-nowrap text-[10px] px-2 py-1 rounded-md font-semibold border ${
+                            isMatched 
+                              ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10' 
+                              : 'bg-white border-slate-200 text-slate-700'
+                          }`}
+                        >
                         {s}
                       </span>
                     );
                   })}
                 </div>
 
-                {/* Invitation / Offer Dispatch button */}
+                {/* Mentor Chat Invite */}
                 <div className="mt-6 flex flex-col gap-3">
-                  {selectedCandidateForModal.score >= matchThreshold ? (
-                    <div>
-                      {!activeInvite ? (
-                        <button
-                          onClick={() => {
-                            handleSendInvite(selectedCandidateForModal);
-                            setSelectedCandidateForModal(null);
-                          }}
-                          className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl transition text-center cursor-pointer flex items-center justify-center gap-1.5 shadow shadow-red-500/20"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          Invite to Coffee Chat
-                        </button>
-                      ) : activeInvite.status === 'pending' ? (
-                        <button
-                          disabled
-                          className="w-full py-2.5 bg-slate-200 text-slate-500 font-semibold text-xs rounded-xl text-center cursor-not-allowed"
-                        >
-                          Invite Sent (Pending Student Response)
-                        </button>
-                      ) : activeInvite.status === 'accepted' ? (
-                        <div className="space-y-2">
-                          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] text-emerald-800 font-mono flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-500" />
-                            <span>Connected & Match Active</span>
-                          </div>
-
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleToggleManagerShare(activeInvite.id)}
-                              className={`flex-1 py-2.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${activeInvite.managerSharedProfile
-                                  ? 'bg-slate-900 text-white border-transparent'
-                                  : 'bg-white text-slate-700 border-slate-250 hover:bg-slate-50'
-                                }`}
-                            >
-                              {activeInvite.managerSharedProfile ? 'Revoke Profile Share' : 'Share Contact Details'}
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                handleSendOffer(isProfileShared ? selectedCandidateForModal.name : getMaskedName(selectedCandidateForModal));
-                                setSelectedCandidateForModal(null);
-                              }}
-                              className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${isProfileShared
-                                  ? 'bg-red-600 hover:bg-red-700 text-white shadow shadow-red-500/20'
-                                  : 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                                }`}
-                              disabled={!isProfileShared}
-                            >
-                              <UserCheck className="w-3.5 h-3.5" />
-                              Send Intern Offer
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="bg-slate-100 p-3 rounded-xl text-center text-xs font-semibold text-slate-500">
-                          Invite Declined by Student
-                        </div>
-                      )}
+                  {!activeInvite ? (
+                    <button
+                      onClick={() => {
+                        handleSendInvite(selectedCandidateForModal);
+                        setSelectedCandidateForModal(null);
+                      }}
+                      className="w-full py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold text-xs rounded-xl transition text-center cursor-pointer flex items-center justify-center gap-1.5 shadow shadow-red-500/20"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      Invite to Mentor Chat
+                    </button>
+                  ) : activeInvite.status === 'pending' ? (
+                    <button
+                      disabled
+                      className="w-full py-2.5 bg-slate-200 text-slate-500 font-semibold text-xs rounded-xl text-center cursor-not-allowed"
+                    >
+                      Invite Sent (Pending Student Response)
+                    </button>
+                  ) : activeInvite.status === 'accepted' ? (
+                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] text-emerald-800 font-mono flex items-center gap-2">
+                      <Check className="w-4 h-4 text-emerald-500" />
+                      <span>Connected — Open chat in Mentor Chats tab</span>
                     </div>
                   ) : (
-                    <div className="bg-slate-100 p-3.5 rounded-2xl flex items-center gap-2 border border-slate-200 text-slate-500">
-                      <Lock className="w-4 h-4 text-slate-400 shrink-0" />
-                      <span className="text-[11px] font-mono leading-tight">
-                        Locked: Candidate match score ({selectedCandidateForModal.score}) must exceed the threshold ({matchThreshold}) to enable coffee chat invitations.
-                      </span>
+                    <div className="bg-slate-100 p-3 rounded-xl text-center text-xs font-semibold text-slate-500">
+                      Invite Declined by Student
                     </div>
                   )}
                 </div>

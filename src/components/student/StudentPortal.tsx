@@ -9,7 +9,7 @@ import {
   NetworkProfile,
   ConnectionChat,
   VisaStamp,
-  CoffeeChatInvite
+  MentorChat
 } from '../../types';
 import {
   Award, Clock, Globe, MessageSquare, Ticket, Layout, Sparkles, Coffee,
@@ -24,7 +24,6 @@ import CareersTab from './CareersTab';
 import NetworkTab from './NetworkTab';
 import TicketTab from './TicketTab';
 import { supabase } from '../../lib/supabase';
-import CoffeeChatTab from './CoffeeChatTab';
 import PublicPortal from '../public/PublicPortal';
 
 interface StudentPortalProps {
@@ -253,11 +252,11 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
     ];
   });
 
-  // Coffee Chat Invites State with LocalStorage sync
-  const [invites, setInvites] = useState<CoffeeChatInvite[]>(() => {
-    const defaultInvites: CoffeeChatInvite[] = [
+  // Mentor Chat state with LocalStorage sync
+  const [invites, setInvites] = useState<MentorChat[]>(() => {
+    const defaultInvites: MentorChat[] = [
       {
-        id: 'mock_invite_1',
+        id: 'mc_mock_1',
         candidateId: 'c_sarah_j',
         managerName: 'Dr. Emily Chen',
         managerDept: 'R&D Advanced Materials',
@@ -267,13 +266,30 @@ export default function StudentPortal({ onLogout }: StudentPortalProps) {
         studentSharedProfile: false,
         managerSharedProfile: true,
         timestamp: 'Today, 09:41 AM'
+      },
+      {
+        id: 'mc_mock_interaction_student_1',
+        candidateId: 'c_sarah_j',
+        managerName: 'Michael Weber',
+        managerDept: 'Embedded Systems',
+        managerResearch: 'IoT Sensor Networks',
+        score: 88,
+        status: 'accepted',
+        studentSharedProfile: true,
+        managerSharedProfile: true,
+        timestamp: 'Yesterday, 14:20 PM',
+        messages: [
+          { sender: 'employee', text: 'Hi Sarah! I came across your profile and was really impressed by your capstone project on IoT sensors. Would you be open to a quick chat about our upcoming internship roles?', timestamp: 'Yesterday, 14:20 PM' },
+          { sender: 'student', text: 'Hi Michael! Thank you for reaching out. I would definitely be interested. Your team\'s work on low-power telemetry is exactly what I want to specialize in.', timestamp: 'Yesterday, 15:05 PM' },
+          { sender: 'employee', text: 'That is great to hear! I\'ll send over a Teams link for a 15-minute call next week.', timestamp: 'Yesterday, 15:10 PM' }
+        ]
       }
     ];
     const saved = localStorage.getItem('we_connect_chat_invites');
     if (saved) {
       try {
         let parsed = JSON.parse(saved);
-        if (!parsed.some((i: any) => i.id === 'mock_invite_1')) {
+        if (!parsed.some((i: any) => i.id === 'mc_mock_1')) {
           parsed = [...defaultInvites, ...parsed];
         }
         return parsed;

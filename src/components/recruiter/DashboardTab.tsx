@@ -1,13 +1,110 @@
 import React, { useState } from 'react';
-import { Users, Award, Calendar, Briefcase, X, ArrowUpRight, GraduationCap, CheckCircle, Sparkles } from 'lucide-react';
-import { Candidate, CoffeeChatInvite } from '../../types';
+import { Users, Award, Calendar, Briefcase, X, ArrowUpRight, GraduationCap, CheckCircle, Sparkles, Download, Box, MessageCircle } from 'lucide-react';
+import { Candidate, MentorChat } from '../../types';
 import { db } from '../../utils/db';
 
 interface DashboardTabProps {
   candidates: Candidate[];
-  invites: CoffeeChatInvite[];
+  invites: MentorChat[];
   registrations: any[];
   onViewCandidate: (cand: Candidate) => void;
+}
+
+function EventSpecificAudience({ candidates, allRegistrations, onViewCandidate }: { candidates: Candidate[], allRegistrations: any[], onViewCandidate: (cand: Candidate) => void }) {
+  const [selectedEventId, setSelectedEventId] = useState('e1');
+
+  const filteredCandidates = candidates.filter(c => 
+    allRegistrations.some(r => r.student_id === c.id && r.event_id === selectedEventId)
+  );
+
+  return (
+    <div className="bg-white rounded-3xl border border-slate-200 p-6 md:p-8 shadow-sm relative overflow-hidden">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+        <div>
+          <h3 className="font-display font-semibold text-lg text-slate-900 flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-red-500" />
+            Live Event Audience & ROI
+          </h3>
+          <p className="text-slate-500 text-xs mt-1">Real-time roster of students who scanned the boarding pass for a specific event.</p>
+        </div>
+        <div className="flex gap-2">
+          <select 
+            value={selectedEventId}
+            onChange={(e) => setSelectedEventId(e.target.value)}
+            className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:border-red-400 cursor-pointer"
+          >
+            <option value="e1">EMC Academy Seminar</option>
+            <option value="e2">Wireless Power Lab</option>
+            <option value="e3">RFID Hackathon Challenge</option>
+            <option value="e4">Eco-Design Capstone</option>
+          </select>
+        </div>
+      </div>
+
+      {/* ROI Metrics Row */}
+      {filteredCandidates.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+          <div className="flex flex-col">
+            <span className="text-2xl font-display font-bold text-slate-900">{filteredCandidates.length}</span>
+            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 mt-1"><Users className="w-3 h-3 text-red-500" /> PASSES</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-display font-bold text-slate-900">{Math.floor(filteredCandidates.length * 0.65)}</span>
+            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 mt-1"><Download className="w-3 h-3 text-red-500" /> DOWNLOADS</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-display font-bold text-slate-900">{Math.floor(filteredCandidates.length * 0.4)}</span>
+            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 mt-1"><MessageCircle className="w-3 h-3 text-red-500" /> Q&A POSTS</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-display font-bold text-slate-900">{Math.floor(filteredCandidates.length * 0.25)}</span>
+            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 mt-1"><Box className="w-3 h-3 text-red-500" /> LAB KITS</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-display font-bold text-slate-900">{Math.floor(filteredCandidates.length * 0.15)}</span>
+            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 mt-1"><Briefcase className="w-3 h-3 text-red-500" /> PORTFOLIOS</span>
+          </div>
+          <div className="flex flex-col">
+            <span className="text-2xl font-display font-bold text-slate-900">{Math.floor(filteredCandidates.length * 0.1)}</span>
+            <span className="text-[10px] text-slate-500 font-mono font-bold flex items-center gap-1 mt-1"><Award className="w-3 h-3 text-red-500" /> CHATS</span>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredCandidates.length > 0 ? (
+          filteredCandidates.map(cand => (
+            <div key={cand.id} className="p-4 rounded-2xl border border-slate-200 hover:border-red-300 hover:shadow-sm bg-white transition flex flex-col justify-between">
+              <div className="flex items-center gap-3">
+                <img src={cand.avatarUrl} alt={cand.name} className="w-10 h-10 rounded-xl object-cover shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-xs font-bold text-slate-900 truncate">{cand.name}</h4>
+                  <p className="text-[10px] text-slate-500 font-mono truncate mt-0.5">{cand.university}</p>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="text-[10px] font-mono text-slate-400">Score</span>
+                  <span className="text-xs font-bold text-emerald-600">{cand.score}</span>
+                </div>
+              </div>
+              <div className="mt-4 pt-3 border-t border-slate-100">
+                <button 
+                  onClick={() => onViewCandidate(cand)}
+                  className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[10px] font-semibold rounded-lg transition cursor-pointer"
+                >
+                  View Portfolio
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="col-span-full py-10 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+            <Calendar className="w-6 h-6 mx-auto mb-2 opacity-40" />
+            <p className="text-xs font-medium text-slate-600">No boarding passes scanned yet.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 type SectionType = 
@@ -139,7 +236,7 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
           };
           return {
             candidate,
-            extraInfo: `${inv.status === 'accepted' ? '✓ Accepted' : '⏳ Pending'}: Coffee Chat with ${inv.managerName} (${inv.managerDept})`
+            extraInfo: `${inv.status === 'accepted' ? '✓ Active' : '⏳ Invited'}: Mentor chat with ${inv.managerName} (${inv.managerDept})`
           };
         });
       case 'funnel_lecture':
@@ -239,7 +336,7 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
           className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex items-center justify-between cursor-pointer hover:border-red-500 hover:shadow-md transition-all duration-300 group"
         >
           <div>
-            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest block font-mono">Active Matches</span>
+            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest block font-mono">Mentor Chats</span>
             <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{activeMatchesCount}</p>
             <span className="text-[10px] text-red-600 font-bold font-mono block mt-1 flex items-center gap-0.5 group-hover:text-red-700 transition-colors">
               {invites.filter(i => i.status === 'pending').length} pending responses <ArrowUpRight className="w-3 h-3" />
@@ -444,6 +541,9 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
         </div>
 
       </div>
+
+      {/* --- LIVE EVENT AUDIENCE (EVENT-SPECIFIC ROI) --- */}
+      <EventSpecificAudience candidates={candidates} allRegistrations={allRegistrations} onViewCandidate={onViewCandidate} />
 
       {/* --- DASHBOARD DETAIL SECTION MODAL --- */}
       {activeSectionModal && currentModalInfo && (

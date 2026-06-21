@@ -1,6 +1,6 @@
 // src/types.ts
 
-export type UserRole = null | 'student' | 'recruiter' | 'educator';
+export type UserRole = null | 'student' | 'recruiter' | 'educator' | 'community';
 
 export interface SkillBadge {
   name: string;
@@ -65,6 +65,7 @@ export interface LearningMaterial {
   uploadDate: string;
   views: number;
   downloads: number;
+  educatorName?: string;
 }
 
 export interface Opportunity {
@@ -124,7 +125,7 @@ export interface Candidate {
   stage: 'Talent Pool' | 'Saved' | 'Recruiter Review' | 'Interview Scheduled';
   avatarUrl: string;
   saved?: boolean;
-  projects?: { title: string; description: string; tech: string[] }[];
+  projects?: { title: string; description: string; tech: string[]; components?: string[]; imageUrl?: string }[];
 }
 
 export interface PostedOpportunity {
@@ -158,7 +159,7 @@ export interface CapstoneProject {
   sharedWithWE: boolean;
 }
 
-export interface CoffeeChatInvite {
+export interface MentorChat {
   id: string;
   candidateId: string;
   managerName: string;
@@ -172,3 +173,29 @@ export interface CoffeeChatInvite {
   messages?: { sender: 'employee' | 'student'; text: string; timestamp: string }[];
 }
 
+/** @deprecated Use MentorChat instead */
+export type CoffeeChatInvite = MentorChat;
+
+export interface CommunityReply {
+  id: string;
+  authorName: string;
+  authorRole: 'Student' | 'Educator' | 'Industry';
+  authorAvatar?: string;
+  content: string;
+  timestamp: string;
+  upvotes: number;
+}
+
+export interface CommunityPost {
+  id: string;
+  title: string;
+  content: string;
+  authorName: string;
+  authorRole: 'Student' | 'Educator' | 'Industry';
+  authorAvatar?: string;
+  tags: string[];
+  timestamp: string;
+  upvotes: number;
+  views: number;
+  replies: CommunityReply[];
+}
