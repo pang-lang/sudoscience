@@ -1,13 +1,58 @@
 import React from 'react';
-import { Candidate } from '../../types';
-import { ArrowRight, Check } from 'lucide-react';
+import { Candidate, MentorChat } from '../../types';
+import { ArrowRight, Check, FileUser, Lock } from 'lucide-react';
 
 interface PipelineTabProps {
   candidates: Candidate[];
   transitionCandidateStage: (id: string, dir: 'next' | 'prev') => void;
+  invites: MentorChat[];
+  onViewCandidate: (cand: Candidate) => void;
 }
 
-export default function PipelineTab({ candidates, transitionCandidateStage }: PipelineTabProps) {
+/** Returns true if the student has an accepted invite AND has shared their profile */
+function isShared(candidateId: string, invites: MentorChat[]): boolean {
+  return invites.some(
+    inv => inv.candidateId === candidateId && inv.status === 'accepted' && inv.studentSharedProfile
+  );
+}
+
+/** CV Profile button — full access if shared, masked if not */
+function CVButton({
+  cand,
+  invites,
+  onViewCandidate,
+}: {
+  cand: Candidate;
+  invites: MentorChat[];
+  onViewCandidate: (cand: Candidate) => void;
+}) {
+  const shared = isShared(cand.id, invites);
+  return (
+    <button
+      onClick={() => onViewCandidate(cand)}
+      title={shared ? 'View full CV profile' : 'View masked profile (student has not shared CV)'}
+      className={`flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+        shared
+          ? 'bg-slate-900 text-white border-transparent hover:bg-slate-800'
+          : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+      }`}
+    >
+      {shared ? (
+        <FileUser className="w-3 h-3" />
+      ) : (
+        <Lock className="w-3 h-3" />
+      )}
+      CV Profile
+    </button>
+  );
+}
+
+export default function PipelineTab({
+  candidates,
+  transitionCandidateStage,
+  invites,
+  onViewCandidate,
+}: PipelineTabProps) {
   return (
     <div id="recruiter-view-pipeline" className="space-y-6 max-w-7xl mx-auto w-full">
       
@@ -19,7 +64,7 @@ export default function PipelineTab({ candidates, transitionCandidateStage }: Pi
       {/* Kanban Grid Rows */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-start">
         
-        {/* Swimlane 1: Talent Pool */}
+        {/* Swimlane 1: Talent Pool — no CV button (not yet in pipeline) */}
         <div className="bg-slate-100 rounded-3xl p-4 min-h-[500px] border border-slate-200/60">
           <div className="flex items-center justify-between mb-4 px-2">
             <span className="font-display font-semibold text-xs uppercase tracking-wider text-slate-600">Talent Pool</span>
@@ -67,10 +112,14 @@ export default function PipelineTab({ candidates, transitionCandidateStage }: Pi
               <div key={cand.id} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs hover:shadow transition">
                 <div className="flex items-center gap-2.5 mb-3">
                   <img className="w-8 h-8 rounded-full object-cover" src={cand.avatarUrl} alt={cand.name} referrerPolicy="no-referrer" />
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-slate-950 leading-tight">{cand.name}</h4>
-                    <span className="text-[10px] text-slate-400 font-mono">{cand.university}</span>
+                    <span className="text-[10px] text-slate-400 font-mono truncate block">{cand.university}</span>
                   </div>
+                </div>
+                {/* CV Profile button row */}
+                <div className="mb-2">
+                  <CVButton cand={cand} invites={invites} onViewCandidate={onViewCandidate} />
                 </div>
                 <div className="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2.5">
                   <button onClick={() => transitionCandidateStage(cand.id, 'prev')} className="text-slate-400 hover:text-slate-900 cursor-pointer font-semibold text-[11px]">Back</button>
@@ -101,16 +150,20 @@ export default function PipelineTab({ candidates, transitionCandidateStage }: Pi
               <div key={cand.id} className="bg-white border border-red-500/20 rounded-2xl p-4 shadow-md hover:shadow transition">
                 <div className="flex items-center gap-2.5 mb-3">
                   <img className="w-8 h-8 rounded-full object-cover" src={cand.avatarUrl} alt={cand.name} referrerPolicy="no-referrer" />
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-slate-950 leading-tight">{cand.name}</h4>
-                    <span className="text-[10px] text-slate-400 font-mono">{cand.university}</span>
+                    <span className="text-[10px] text-slate-400 font-mono truncate block">{cand.university}</span>
                   </div>
+                </div>
+                {/* CV Profile button row */}
+                <div className="mb-2">
+                  <CVButton cand={cand} invites={invites} onViewCandidate={onViewCandidate} />
                 </div>
                 <div className="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2.5">
                   <button onClick={() => transitionCandidateStage(cand.id, 'prev')} className="text-slate-400 hover:text-slate-900 cursor-pointer font-semibold text-[11px]">Back</button>
                   <button 
                     onClick={() => transitionCandidateStage(cand.id, 'next')}
-                    className="bg-slate-900 text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1 font-semibold text-[11px] cursor-pointer"
+                    className="bg-slate-900 text-white text-xs font-semibold px-2 py-1 rounded flex items-center gap-1 text-[11px] cursor-pointer"
                   >
                     Interview
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -135,10 +188,14 @@ export default function PipelineTab({ candidates, transitionCandidateStage }: Pi
               <div key={cand.id} className="bg-white border border-slate-205 rounded-2xl p-4 shadow-xs hover:shadow transition">
                 <div className="flex items-center gap-2.5 mb-3">
                   <img className="w-8 h-8 rounded-full object-cover" src={cand.avatarUrl} alt={cand.name} referrerPolicy="no-referrer" />
-                  <div>
+                  <div className="flex-1 min-w-0">
                     <h4 className="text-xs font-bold text-slate-950 leading-tight">{cand.name}</h4>
-                    <span className="text-[10px] text-slate-400 font-mono">{cand.university}</span>
+                    <span className="text-[10px] text-slate-400 font-mono truncate block">{cand.university}</span>
                   </div>
+                </div>
+                {/* CV Profile button row */}
+                <div className="mb-2">
+                  <CVButton cand={cand} invites={invites} onViewCandidate={onViewCandidate} />
                 </div>
                 <div className="flex justify-between items-center text-[10px] border-t border-slate-100 pt-2.5">
                   <button onClick={() => transitionCandidateStage(cand.id, 'prev')} className="text-slate-400 hover:text-slate-900 cursor-pointer font-semibold text-[11px]">Back</button>
