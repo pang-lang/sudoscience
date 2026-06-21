@@ -506,8 +506,8 @@ export default function PublicPortal({
     const file = e.target.files?.[0];
     if (file) {
       const fileName = file.name.toLowerCase();
-      let fallbackId = 'wsen-tids';
-      let label = 'WSEN-TIDS Temperature Sensor';
+      let fallbackId = 'we-cbf';
+      let label = 'WE-CBF SMT EMI Suppression Ferrite Bead';
 
       if (fileName.includes('cbf') || fileName.includes('ferrite')) {
         fallbackId = 'we-cbf';
