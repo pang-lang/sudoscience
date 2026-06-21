@@ -515,11 +515,9 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     }
   };
 
-  const activeInvite = selectedCandidateForModal
-    ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
-    : null;
 
-  const isAnonymized = false;
+
+
   const getMaskedName = (cand: Candidate) => {
     const initials = cand.name.split(' ').map(n => n[0]).join('');
     return `Candidate #${initials}${cand.score}`;
