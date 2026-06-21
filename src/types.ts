@@ -126,6 +126,8 @@ export interface Candidate {
   avatarUrl: string;
   saved?: boolean;
   projects?: { title: string; description: string; tech: string[]; components?: string[]; imageUrl?: string }[];
+  /** Würth Elektronik products this candidate has used in their projects */
+  weProducts?: string[];
 }
 
 export interface PostedOpportunity {

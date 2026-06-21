@@ -248,6 +248,26 @@ export default function DiscoveryTab({
               })}
             </div>
           </div>
+
+          {/* WE Product Experience */}
+          {cand.weProducts && cand.weProducts.length > 0 && (
+            <div className="pt-3 border-t border-slate-100 mt-3">
+              <span className="text-[9px] font-mono uppercase font-semibold block mb-2 flex items-center gap-1.5">
+                <span className="bg-red-600 text-white px-1 py-0.5 rounded text-[8px] font-black tracking-tighter leading-none">WE</span>
+                <span className="text-slate-400">Product Experience</span>
+              </span>
+              <div className="flex flex-wrap gap-1">
+                {cand.weProducts.map((prod, i) => (
+                  <span
+                    key={i}
+                    className="text-[10px] px-2 py-0.5 rounded-sm font-medium bg-red-50 text-red-800 border border-red-100"
+                  >
+                    {prod}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer actions */}

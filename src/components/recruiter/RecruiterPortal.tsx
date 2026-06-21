@@ -28,9 +28,10 @@ const FALLBACK_CANDIDATES: Candidate[] = [
     stage: 'Talent Pool',
     avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
     saved: false,
+    weProducts: ['WSEN-TIDS Temperature Sensor', 'MagI3C FISM Power Module', 'WE-RFID RFID Inlay'],
     projects: [
-      { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'] },
-      { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'] }
+      { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'], components: ['WE-RFID RFID Inlay', 'WSEN-TIDS Temperature Sensor'] },
+      { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'], components: ['MagI3C FISM Power Module'] }
     ]
   },
   {
@@ -42,8 +43,9 @@ const FALLBACK_CANDIDATES: Candidate[] = [
     stage: 'Talent Pool',
     avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
     saved: false,
+    weProducts: ['WE-CPIB Power Inductor', 'WE-MAPI Metal Alloy Inductor', 'REDEXPERT Simulation Tool'],
     projects: [
-      { title: 'Bi-Directional Buck-Boost Converter', description: 'Designed high-frequency converter layout for battery systems.', tech: ['Altium', 'LTspice', 'MATLAB'] }
+      { title: 'Bi-Directional Buck-Boost Converter', description: 'Designed high-frequency converter layout for battery systems.', tech: ['Altium', 'LTspice', 'MATLAB'], components: ['WE-CPIB Power Inductor', 'WE-MAPI Metal Alloy Inductor'] }
     ]
   },
   {
@@ -54,7 +56,11 @@ const FALLBACK_CANDIDATES: Candidate[] = [
     score: 88,
     stage: 'Saved',
     avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300',
-    saved: true
+    saved: true,
+    weProducts: ['WE-CLFS EMC Ferrite', 'WSEN-HIDS Humidity Sensor', 'WE-CBF Multilayer Capacitor'],
+    projects: [
+      { title: 'BLE Environmental Monitor', description: 'Wireless BLE sensor node for ambient humidity and temperature logging.', tech: ['Embedded C', 'BLE', 'RTOS'], components: ['WSEN-HIDS Humidity Sensor', 'WE-CBF Multilayer Capacitor'] }
+    ]
   },
   {
     id: 'c_simon_w',
@@ -64,7 +70,11 @@ const FALLBACK_CANDIDATES: Candidate[] = [
     score: 76,
     stage: 'Recruiter Review',
     avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
-    saved: false
+    saved: false,
+    weProducts: ['REDEXPERT Simulation Tool', 'WE-KI Ceramic Inductor'],
+    projects: [
+      { title: 'Predictive Fault Detection', description: 'ML model to classify PCB component failures from time-series sensor data.', tech: ['Python', 'TensorFlow', 'Matlab'], components: ['WE-KI Ceramic Inductor'] }
+    ]
   },
   {
     id: 'c_anna_l',
@@ -74,9 +84,14 @@ const FALLBACK_CANDIDATES: Candidate[] = [
     score: 91,
     stage: 'Interview Scheduled',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
-    saved: false
+    saved: false,
+    weProducts: ['WE-RFI Ferrite Bead', 'WE-SHC Shielding Connector', 'WE-KI Ceramic Inductor'],
+    projects: [
+      { title: 'EMC Compliance Test Rig', description: 'Automated test bench for measuring radiated emissions and shielding effectiveness.', tech: ['Ansys HFSS', 'RF Simulation', 'Python'], components: ['WE-RFI Ferrite Bead', 'WE-SHC Shielding Connector'] }
+    ]
   }
 ];
+
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -195,16 +210,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         const { data: candidatesData, error } = await supabase.from('candidates').select('*');
         if (error) throw error;
         if (candidatesData && candidatesData.length > 0) {
-          const mappedCandidates: Candidate[] = candidatesData.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            university: c.university,
-            skills: c.skills || [],
-            score: c.score || c.engagementScore || 85,
-            stage: c.stage || 'Talent Pool',
-            avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-            saved: c.saved || false,
-            projects: c.projects || [
+          const mappedCandidates: Candidate[] = candidatesData.map((c: any) => {
+            const projects = c.projects || [
               {
                 title: 'Academic Capstone / Coursework',
                 description: `Applied learning project focusing on ${c.skills && c.skills.length > 0 ? c.skills[0] : 'Engineering'}.`,
@@ -213,8 +220,23 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                   ? ['MagI3C Power Module', 'REDCUBE Terminals']
                   : ['WE-KI Ceramic Inductors']
               }
-            ]
-          }));
+            ];
+            // Aggregate weProducts from all project components if not stored separately
+            const weProducts: string[] = c.we_products || c.weProducts ||
+              Array.from(new Set(projects.flatMap((p: any) => p.components || [])));
+            return {
+              id: c.id,
+              name: c.name,
+              university: c.university,
+              skills: c.skills || [],
+              score: c.score || c.engagementScore || 85,
+              stage: c.stage || 'Talent Pool',
+              avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+              saved: c.saved || false,
+              weProducts,
+              projects
+            };
+          });
           if (!mappedCandidates.some(c => c.id === 'c_sarah_j')) {
             mappedCandidates.push({
               id: 'c_sarah_j',
@@ -225,11 +247,12 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               stage: 'Recruiter Review',
               avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
               saved: true,
+              weProducts: ['WSEN-TIDS Temperature Sensor', 'MagI3C FISM Power Module'],
               projects: [{
                 title: 'Smart Inventory Tracker',
                 description: 'IoT sensor network for real-time inventory tracking.',
                 tech: ['Embedded C', 'LoRaWAN'],
-                components: ['WSEN Thermals', 'MagI3C Power Module']
+                components: ['WSEN-TIDS Temperature Sensor', 'MagI3C FISM Power Module']
               }]
             });
           }
@@ -243,6 +266,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               stage: 'Talent Pool',
               avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150',
               saved: false,
+              weProducts: ['WE-KI Ceramic Inductors', 'WE-RFI Ferrite Beads'],
               projects: [{
                 title: 'RFID Access System',
                 description: 'Secure access control using RFID tags and custom antennas.',
@@ -888,6 +912,26 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                     </div>
                   )}
                 </div>
+
+                {/* WE Product Experience Section */}
+                {selectedCandidateForModal.weProducts && selectedCandidateForModal.weProducts.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-slate-200">
+                    <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest block font-semibold flex items-center gap-1.5 mb-2.5">
+                      <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter">WE</span>
+                      Product Experience
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedCandidateForModal.weProducts.map((prod, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 text-red-800 font-semibold"
+                        >
+                          {prod}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Projects Section */}
                 {selectedCandidateForModal.projects && selectedCandidateForModal.projects.length > 0 && (
