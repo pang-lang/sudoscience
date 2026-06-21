@@ -14,7 +14,7 @@ export default defineConfig(({ command }) => {
         const content = fs.readFileSync(envPath, 'utf8').trim();
         if (content) {
           if (content.includes('=')) {
-            const match = content.match(/(?:VITE_)?GEMINI_API_KEY=(.*)/);
+            const match = content.match(/(?:VITE_)?GEMINI_(?:API|APP)_KEY=(.*)/);
             if (match) geminiKey = match[1].trim();
           } else {
             // If it's just the raw key string

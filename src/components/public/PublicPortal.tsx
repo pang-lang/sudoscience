@@ -505,10 +505,31 @@ export default function PublicPortal({
   const handlePhotoUploadChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      const fileName = file.name.toLowerCase();
+      let fallbackId = 'wsen-tids';
+      let label = 'WSEN-TIDS Temperature Sensor';
+
+      if (fileName.includes('cbf') || fileName.includes('ferrite')) {
+        fallbackId = 'we-cbf';
+        label = 'WE-CBF SMT EMI Suppression Ferrite Bead';
+      } else if (fileName.includes('cmb') || fileName.includes('choke')) {
+        fallbackId = 'we-cmb';
+        label = 'WE-CMB Common Mode Power Line Choke';
+      } else if (fileName.includes('pd') || fileName.includes('inductor')) {
+        fallbackId = 'we-pd';
+        label = 'WE-PD Performance SMT Shielded Inductor';
+      } else if (fileName.includes('tids') || fileName.includes('temp') || fileName.includes('sensor')) {
+        fallbackId = 'wsen-tids';
+        label = 'WSEN-TIDS High-Precision Temperature Sensor';
+      } else if (fileName.includes('w-102') || fileName.includes('rfid') || fileName.includes('tag')) {
+        fallbackId = 'w-102';
+        label = 'WE-RFID Passive UHF transponder tag';
+      }
+
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = reader.result as string;
-        triggerScanLogic(base64, 'wsen-tids', 'WSEN-TIDS Temperature Sensor');
+        triggerScanLogic(base64, fallbackId, label);
       };
       reader.readAsDataURL(file);
     }
