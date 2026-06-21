@@ -16,7 +16,66 @@ import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
-import MentorChatTab from './MentorChatTab';
+
+const FALLBACK_CANDIDATES: Candidate[] = [
+  {
+    id: 'c_sarah_j',
+    name: 'Sarah Jenkins',
+    university: 'Munich University of Applied Sciences',
+    skills: ['SolidWorks Pro', 'AutoCAD', 'Thermodynamics', 'PCB Design', 'RFID Tech', 'Data Analysis'],
+    score: 85,
+    stage: 'Talent Pool',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
+    saved: false,
+    projects: [
+      { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'] },
+      { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'] }
+    ]
+  },
+  {
+    id: 'c_lukas_m',
+    name: 'Lukas Miller',
+    university: 'Technische Universität München',
+    skills: ['Power Electronics', 'Simulink', 'PCB Design', 'Converter Topologies', 'Altium Designer'],
+    score: 94,
+    stage: 'Talent Pool',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+    saved: false,
+    projects: [
+      { title: 'Bi-Directional Buck-Boost Converter', description: 'Designed high-frequency converter layout for battery systems.', tech: ['Altium', 'LTspice', 'MATLAB'] }
+    ]
+  },
+  {
+    id: 'c_elena_r',
+    name: 'Elena Rostova',
+    university: 'KIT Karlsruhe',
+    skills: ['Embedded C', 'Microcontrollers', 'BLE', 'RTOS', 'C++', 'IoT Telemetry'],
+    score: 88,
+    stage: 'Saved',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300',
+    saved: true
+  },
+  {
+    id: 'c_simon_w',
+    name: 'Simon Weber',
+    university: 'RWTH Aachen',
+    skills: ['Python', 'TensorFlow', 'Data Analysis', 'Matlab', 'Machine Learning'],
+    score: 76,
+    stage: 'Recruiter Review',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
+    saved: false
+  },
+  {
+    id: 'c_anna_l',
+    name: 'Anna Lindqvist',
+    university: 'Technische Universität Stuttgart',
+    skills: ['EMC Shielding', 'RF Simulation', 'Ansys HFSS', 'Signal Integrity'],
+    score: 91,
+    stage: 'Interview Scheduled',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+    saved: false
+  }
+];
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -100,7 +159,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       if (e.key === 'we_connect_chat_invites' && e.newValue) {
         try {
           setInvites(JSON.parse(e.newValue));
-        } catch {}
+        } catch { }
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -134,7 +193,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       try {
         const { data: candidatesData, error } = await supabase.from('candidates').select('*');
         if (error) throw error;
-        if (candidatesData) {
+        if (candidatesData && candidatesData.length > 0) {
           const mappedCandidates: Candidate[] = candidatesData.map((c: any) => ({
             id: c.id,
             name: c.name,
@@ -192,9 +251,12 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             });
           }
           setCandidates(mappedCandidates);
+        } else {
+          setCandidates(FALLBACK_CANDIDATES);
         }
       } catch (e) {
-        console.error('Could not fetch candidates from Supabase:', e);
+        console.error('Could not fetch candidates from Supabase, using mock fallback:', e);
+        setCandidates(FALLBACK_CANDIDATES);
       }
 
       // 2. Fetch Postings, Applications, and Registrations from Supabase
@@ -214,7 +276,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         const { data: jobsData, error: jobsErr } = await supabase.from('opportunities').select('*');
         const { data: appsData } = await supabase.from('opportunity_applications').select('*');
         const { data: candsData } = await supabase.from('candidates').select('*');
-        
+
         if (jobsErr) throw jobsErr;
         if (jobsData) {
           const mappedJobs = jobsData.map((o: any) => {
@@ -269,7 +331,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, []);
 
   // Window navigation
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'mentorchat' | 'pipeline' | 'opportunities'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities'>('dashboard');
 
   // Custom alert feedback
   const [toast, setToast] = useState<string | null>(null);
@@ -291,7 +353,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           let skills = p.requiredSkills && p.requiredSkills.length > 0
             ? p.requiredSkills
             : ['Project Management'];
-            
+
           if (!p.requiredSkills || p.requiredSkills.length === 0) {
             const lowerTitle = p.title.toLowerCase();
             if (lowerTitle.includes('power') || lowerTitle.includes('energy') || lowerTitle.includes('voltage') || lowerTitle.includes('choke') || lowerTitle.includes('inductor')) {
@@ -308,7 +370,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           }
 
           db.addOpportunity(p.title, p.type, p.deadline, skills, `Join us as a ${p.title}. Lead hardware layouts and systems integration research.`);
-          
+
           // Sync to Supabase
           supabase.from('opportunities').insert({
             id: p.id,
@@ -320,7 +382,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             skills: skills.join(', '),
             required_skills: skills,
             status: 'Active'
-          }).then(() => {});
+          }).then(() => { });
         }
       });
 
@@ -463,6 +525,13 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     return `Candidate #${initials}${cand.score}`;
   };
 
+  const activeInvite = selectedCandidateForModal
+    ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
+    : null;
+
+  const isProfileShared = !!(activeInvite && activeInvite.studentSharedProfile);
+  const isAnonymized = !isProfileShared;
+
   return (
     <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
 
@@ -542,17 +611,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             </div>
           </button>
 
-          <button
-            id="tab-recruiter-mentorchat"
-            onClick={() => setCurrentTab('mentorchat')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'mentorchat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-              }`}
-          >
-            <div className="flex items-center gap-3">
-              <Coffee className="w-4 h-4" />
-              <span>Mentor Chats</span>
-            </div>
-          </button>
+
 
           <button
             id="tab-recruiter-opportunities"
@@ -624,6 +683,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               setCandidates={handleSetCandidates}
               showToast={showToast}
               onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
+              invites={invites}
+              setInvites={setInvites}
+              onSendInvite={handleSendInvite}
+              managerProfile={managerProfile}
             />
           )}
 
@@ -631,18 +694,6 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             <PipelineTab
               candidates={candidates}
               transitionCandidateStage={transitionCandidateStage}
-            />
-          )}
-
-          {currentTab === 'mentorchat' && (
-            <MentorChatTab
-              candidates={candidates}
-              invites={invites}
-              setInvites={setInvites}
-              setCandidates={handleSetCandidates}
-              managerProfile={managerProfile}
-              showToast={showToast}
-              onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
             />
           )}
 
@@ -737,8 +788,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                           : 'ENG SCORE'}
                       </span>
                       <span className="text-red-600 font-sans font-bold text-sm block mt-0.5">
-                        {(selectedCandidateForModal as any).calculatedScore !== undefined 
-                          ? (selectedCandidateForModal as any).calculatedScore 
+                        {(selectedCandidateForModal as any).calculatedScore !== undefined
+                          ? (selectedCandidateForModal as any).calculatedScore
                           : selectedCandidateForModal.score}/100
                       </span>
                     </div>
@@ -761,14 +812,13 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                       (ms: string) => ms.toLowerCase() === s.toLowerCase()
                     );
                     return (
-                        <span 
-                          key={idx} 
-                          className={`inline-flex items-center whitespace-nowrap text-[10px] px-2 py-1 rounded-md font-semibold border ${
-                            isMatched 
-                              ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10' 
-                              : 'bg-white border-slate-200 text-slate-700'
+                      <span
+                        key={idx}
+                        className={`inline-flex items-center whitespace-nowrap text-[10px] px-2 py-1 rounded-md font-semibold border ${isMatched
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10'
+                            : 'bg-white border-slate-200 text-slate-700'
                           }`}
-                        >
+                      >
                         {s}
                       </span>
                     );
@@ -831,10 +881,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                     </div>
                   </div>
                 )}
-                
+
                 {/* CV Actions Section */}
                 <div className="mt-6 flex flex-col gap-3">
-                  <button 
+                  <button
                     onClick={() => {
                       showToast(`Downloaded ${selectedCandidateForModal.name.replace(/\s+/g, '_')}_Resume.pdf`);
                     }}
