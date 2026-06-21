@@ -16,6 +16,7 @@ import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
+import ChatChannelTab from './ChatChannel';
 
 const FALLBACK_CANDIDATES: Candidate[] = [
   {
@@ -331,7 +332,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, []);
 
   // Window navigation
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities' | 'chat'>('dashboard');
 
   // Custom alert feedback
   const [toast, setToast] = useState<string | null>(null);
@@ -622,6 +623,23 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <span>Opportunities</span>
             </div>
           </button>
+
+          <button
+            id="tab-recruiter-chat"
+            onClick={() => setCurrentTab('chat')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'chat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat</span>
+            </div>
+            {invites.filter(inv => inv.status !== 'rejected').length > 0 && (
+              <span className="bg-red-600 text-white font-mono text-[9px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                {invites.filter(inv => inv.status !== 'rejected').length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Swap role back to Student sandbox */}
@@ -700,6 +718,22 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               postings={postings}
               setPostings={handleSetPostings}
               showToast={showToast}
+            />
+          )}
+
+          {currentTab === 'chat' && (
+            <ChatChannelTab
+              candidates={candidates}
+              invites={invites}
+              managerProfile={managerProfile}
+              sentInvites={invites.filter(inv => inv.status !== 'rejected')}
+              acceptedInvites={invites.filter(inv => inv.status === 'accepted')}
+              getMaskedName={(cand, score) => {
+                const initials = cand.name.split(' ').map((n: string) => n[0]).join('');
+                return `Candidate #${initials}${score ?? ''}`;
+              }}
+              showToast={showToast}
+              setInvites={setInvites}
             />
           )}
         </div>

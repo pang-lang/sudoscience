@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Candidate, CoffeeChatInvite } from '../../types';
 import {
-  Search, Bookmark, Sparkles, AlertTriangle, ChevronDown, ChevronUp, Lock, Coffee, Check, MessageSquare, Send, UserCheck, Briefcase, ShieldAlert
+  Search, Bookmark, Sparkles, AlertTriangle, Lock, Coffee, Check, UserCheck, Briefcase, ShieldAlert
 } from 'lucide-react';
 import { db } from '../../utils/db';
 import { supabase } from '../../lib/supabase';
@@ -46,8 +46,7 @@ export default function DiscoveryTab({
   const [schoolFilter, setSchoolFilter] = useState('All');
   const [selectedJobId, setSelectedJobId] = useState<string>('All');
   const [subTab, setSubTab] = useState<'pool' | 'connections'>('pool');
-  const [openChatInviteId, setOpenChatInviteId] = useState<string | null>(null);
-  const [chatMessage, setChatMessage] = useState('');
+
 
   // ── Load invites from Supabase on mount ──────────────────────────────────
   useEffect(() => {
@@ -91,29 +90,7 @@ export default function DiscoveryTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [managerProfile.name]);
 
-  const handleSendChatMessage = (inviteId: string) => {
-    if (!chatMessage.trim()) return;
-    setInvites(prev => prev.map(inv => {
-      if (inv.id === inviteId) {
-        const newMsg = {
-          sender: 'employee' as const,
-          text: chatMessage.trim(),
-          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        };
-        const updatedInvite = { ...inv, messages: [...(inv.messages || []), newMsg] };
 
-        // Synchronize message update to Supabase coffee_chat_invites
-        supabase.from('coffee_chat_invites').update({
-          messages: updatedInvite.messages
-        }).eq('id', inviteId).then(() => {});
-
-        return updatedInvite;
-      }
-      return inv;
-    }));
-    setChatMessage('');
-    showToast('Message sent');
-  };
 
   const sentInvites = invites.filter(inv => inv.status !== 'rejected');
   const acceptedInvites = invites.filter(inv => inv.status === 'accepted');
@@ -635,17 +612,6 @@ export default function DiscoveryTab({
                               </button>
                             )}
 
-                            <button
-                              onClick={() => setOpenChatInviteId(openChatInviteId === inv.id ? null : inv.id)}
-                              className={`px-3 py-1.5 rounded-lg text-[10px] font-semibold border transition cursor-pointer flex items-center gap-1.5 ${
-                                openChatInviteId === inv.id
-                                  ? 'bg-slate-900 text-white border-transparent'
-                                  : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                              }`}
-                            >
-                              <MessageSquare className="w-3.5 h-3.5" />
-                              {openChatInviteId === inv.id ? 'Close Chat' : 'Chat'}
-                            </button>
 
                             <button
                               onClick={() => showToast(`Internship offer sent to ${shared ? student.name : getMaskedName(student, inv.score)}!`)}
@@ -659,53 +625,7 @@ export default function DiscoveryTab({
                       </div>
                     </div>
 
-                    {/* Chat Panel */}
-                    {inv.status === 'accepted' && openChatInviteId === inv.id && (
-                      <div className="border-t border-slate-200 bg-white p-4 space-y-3">
-                        <div className="bg-slate-900 -mx-4 -mt-4 px-4 py-2 flex items-center gap-2 mb-2">
-                          <MessageSquare className="w-3.5 h-3.5 text-red-500" />
-                          <span className="text-[10px] text-white font-mono font-semibold uppercase tracking-wider">
-                            Chat with {shared ? student.name : getMaskedName(student, inv.score)}
-                          </span>
-                        </div>
-                        <div className="max-h-48 overflow-y-auto space-y-2 p-1">
-                          {(inv.messages && inv.messages.length > 0) ? (
-                            inv.messages.map((msg, mi) => (
-                              <div key={mi} className={`flex ${msg.sender === 'employee' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[75%] px-3 py-1.5 rounded-lg text-xs ${
-                                  msg.sender === 'employee'
-                                    ? 'bg-slate-900 text-white rounded-tr-none shadow shadow-slate-900/10'
-                                    : 'bg-slate-100 text-slate-700 border border-slate-200 rounded-tl-none'
-                                }`}>
-                                  <p>{msg.text}</p>
-                                  <span className={`text-[8px] block mt-1 text-right ${
-                                    msg.sender === 'employee' ? 'text-slate-400' : 'text-slate-450'
-                                  }`}>{msg.timestamp}</span>
-                                </div>
-                              </div>
-                            ))
-                          ) : (
-                            <p className="text-xs text-slate-400 text-center py-4 font-mono">No messages yet. Start the conversation!</p>
-                          )}
-                        </div>
-                        <div className="flex gap-2 pt-2 border-t border-slate-100">
-                          <input
-                            type="text"
-                            value={chatMessage}
-                            onChange={(e) => setChatMessage(e.target.value)}
-                            onKeyDown={(e) => { if (e.key === 'Enter') handleSendChatMessage(inv.id); }}
-                            placeholder="Type a message..."
-                            className="flex-1 text-xs px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-slate-800 transition"
-                          />
-                          <button
-                            onClick={() => handleSendChatMessage(inv.id)}
-                            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold transition cursor-pointer"
-                          >
-                            Send
-                          </button>
-                        </div>
-                      </div>
-                    )}
+
                   </div>
                 );
               })}
