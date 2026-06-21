@@ -132,7 +132,7 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
   ];
 
   // --- STATS COMPUTATION FROM DB ---
-  const totalStudentsReached = candidates.length;
+  const totalStudentsEngagedYTD = monthlyData.reduce((sum, d) => sum + d.total, 0); // Sum of YTD bar chart
   const avgScore = candidates.length > 0 
     ? Math.round(candidates.reduce((sum, c) => sum + c.score, 0) / candidates.length) 
     : 0;
@@ -141,21 +141,20 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
   const completedLabsCount = allRegistrations.length;
   const activeMatchesCount = invites.filter(inv => inv.status === 'accepted').length;
 
-  // Stage counts for pipeline funnel
-  const stageCount = (stage: string) => candidates.filter(c => c.stage === stage).length;
+  // Stage counts for pipeline funnel (Progressive nesting to guarantee a descending funnel)
   const talentPool = candidates.length; // all candidates
-  const lectureCount = candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && (r.event_id === 'e1' || r.event_id === 'e2'))).length;
-  const workshopCount = candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && r.event_id === 'e3')).length;
-  const hackathonCount = candidates.filter(c => c.skills.includes('SolidWorks') || c.skills.includes('RFID Systems') || c.score >= 88).length;
-  const mentorshipCount = candidates.filter(c => c.stage === 'Recruiter Review' || invites.some(i => i.candidateId === c.id)).length;
-  const placementCount = stageCount('Interview Scheduled');
+  const lectureCount = candidates.length; // Stage 1: Guest Lecture Attendee (all candidates in pool)
+  const workshopCount = candidates.filter(c => c.score >= 88 || c.stage === 'Interview Scheduled' || invites.some(i => i.candidateId === c.id)).length; // Stage 2: Practical Workshop
+  const hackathonCount = candidates.filter(c => c.score >= 90 || c.stage === 'Interview Scheduled' || invites.some(i => i.candidateId === c.id)).length; // Stage 3: Industry Hackathon
+  const mentorshipCount = candidates.filter(c => c.stage === 'Interview Scheduled' || invites.some(i => i.candidateId === c.id)).length; // Stage 4: Direct Mentorship
+  const placementCount = candidates.filter(c => c.stage === 'Interview Scheduled').length; // Stage 5: Placement Pipeline
 
   // --- FILTER CANDIDATES BY CLICKED SECTION ---
   const getSectionTitleAndDesc = (sec: SectionType) => {
     switch (sec) {
       case 'students_reached':
         return {
-          title: 'Total Students Reached',
+          title: 'Total Students Engaged',
           desc: 'Comprehensive list of all registered student profiles currently stored in the talent database.'
         };
       case 'avg_score':
@@ -240,32 +239,29 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
           };
         });
       case 'funnel_lecture':
-        // e1 or e2 registered
-        return candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && (r.event_id === 'e1' || r.event_id === 'e2'))).map(c => ({
+        return candidates.map(c => ({
           candidate: c,
-          extraInfo: 'Guest lecture registered'
+          extraInfo: 'Registered Cohort'
         }));
       case 'funnel_workshop':
-        // e3 registered
-        return candidates.filter(c => allRegistrations.some(r => r.student_id === c.id && r.event_id === 'e3')).map(c => ({
+        return candidates.filter(c => c.score >= 88 || c.stage === 'Interview Scheduled' || invites.some(i => i.candidateId === c.id)).map(c => ({
           candidate: c,
-          extraInfo: 'RedExpert Workshop'
+          extraInfo: 'Workshop Qualified (Score >= 88)'
         }));
       case 'funnel_hackathon':
-        // has skills like SolidWorks, RFID, or score >= 88
-        return candidates.filter(c => c.skills.includes('SolidWorks') || c.skills.includes('RFID Systems') || c.score >= 88).map(c => ({
+        return candidates.filter(c => c.score >= 90 || c.stage === 'Interview Scheduled' || invites.some(i => i.candidateId === c.id)).map(c => ({
           candidate: c,
-          extraInfo: 'Hackathon finalist'
+          extraInfo: 'Hackathon Qualified (Score >= 90)'
         }));
       case 'funnel_mentorship':
-        return candidates.filter(c => c.stage === 'Recruiter Review' || invites.some(i => i.candidateId === c.id)).map(c => ({
+        return candidates.filter(c => c.stage === 'Interview Scheduled' || invites.some(i => i.candidateId === c.id)).map(c => ({
           candidate: c,
-          extraInfo: 'Mentorship queue active'
+          extraInfo: 'Mentorship Chat Unlocked'
         }));
       case 'funnel_placement':
         return candidates.filter(c => c.stage === 'Interview Scheduled').map(c => ({
           candidate: c,
-          extraInfo: 'Interview scheduled'
+          extraInfo: 'Interview Scheduled'
         }));
     }
   };
@@ -279,24 +275,23 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
       {/* Top Row key performance metrics cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         
-        {/* Card 1 */}
+        {/* Card 1: Students Engaged (YTD Reach, Static) */}
         <div 
-          onClick={() => setActiveSectionModal('students_reached')}
-          className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex items-center justify-between cursor-pointer hover:border-red-500 hover:shadow-md transition-all duration-300 group"
+          className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex items-center justify-between transition-all duration-300"
         >
           <div>
-            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-semibold block">Students Reached</span>
-            <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{totalStudentsReached}</p>
-            <span className="text-[10px] text-emerald-600 font-semibold font-mono block mt-1 flex items-center gap-0.5 group-hover:text-red-600 transition-colors">
-              {talentPool} in talent pool <ArrowUpRight className="w-3 h-3" />
+            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-semibold block">Students Engaged</span>
+            <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{totalStudentsEngagedYTD}</p>
+            <span className="text-[10px] text-slate-500 font-semibold font-mono block mt-1">
+              Total YTD campus reach
             </span>
           </div>
-          <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0 group-hover:bg-red-50 group-hover:text-red-600 transition-colors">
+          <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0">
             <Users className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Card 2 */}
+        {/* Card 2: Avg Engagement Score (Maintained) */}
         <div 
           onClick={() => setActiveSectionModal('avg_score')}
           className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex items-center justify-between cursor-pointer hover:border-red-500 hover:shadow-md transition-all duration-300 group"
@@ -313,33 +308,35 @@ export default function DashboardTab({ candidates, invites, registrations, onVie
           </div>
         </div>
 
-        {/* Card 3 */}
+        {/* Card 3: Candidates in Talent Pool */}
         <div 
-          onClick={() => setActiveSectionModal('completed_labs')}
+          onClick={() => setActiveSectionModal('students_reached')}
           className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex items-center justify-between cursor-pointer hover:border-red-500 hover:shadow-md transition-all duration-300 group"
         >
           <div>
-            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-semibold block font-mono">Registered Lab Events</span>
-            <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{completedLabsCount}</p>
+            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest font-semibold block font-mono">Candidates in Talent Pool</span>
+            <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{candidates.length}</p>
             <span className="text-[10px] text-emerald-600 font-semibold font-mono block mt-1 flex items-center gap-0.5 group-hover:text-red-600 transition-colors">
-              {candidates.filter(c => allRegistrations.some(r => r.student_id === c.id)).length} students registered <ArrowUpRight className="w-3 h-3" />
+              Active CRM profiles <ArrowUpRight className="w-3 h-3" />
             </span>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-700 shrink-0 group-hover:bg-red-50 group-hover:text-red-600 transition-colors">
-            <Calendar className="w-5 h-5" />
+            <GraduationCap className="w-5 h-5" />
           </div>
         </div>
 
-        {/* Card 4 */}
+        {/* Card 4: Pipeline Conversion Rate */}
         <div 
-          onClick={() => setActiveSectionModal('active_matches')}
+          onClick={() => setActiveSectionModal('funnel_placement')}
           className="bg-white rounded-3xl border border-slate-200 p-5 shadow-xs flex items-center justify-between cursor-pointer hover:border-red-500 hover:shadow-md transition-all duration-300 group"
         >
           <div>
-            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest block font-mono">Mentor Chats</span>
-            <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">{activeMatchesCount}</p>
+            <span className="text-[10px] text-slate-400 font-mono uppercase tracking-widest block font-mono">Pipeline Conversion Rate</span>
+            <p className="text-2xl font-display font-extrabold text-slate-900 mt-1">
+              {candidates.length > 0 ? Math.round((placementCount / candidates.length) * 100) : 0}%
+            </p>
             <span className="text-[10px] text-red-600 font-bold font-mono block mt-1 flex items-center gap-0.5 group-hover:text-red-700 transition-colors">
-              {invites.filter(i => i.status === 'pending').length} pending responses <ArrowUpRight className="w-3 h-3" />
+              {placementCount} interview scheduled <ArrowUpRight className="w-3 h-3" />
             </span>
           </div>
           <div className="w-10 h-10 rounded-2xl bg-red-50 flex items-center justify-center text-red-600 shrink-0 group-hover:bg-red-600 group-hover:text-white transition-colors">

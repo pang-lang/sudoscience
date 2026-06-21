@@ -16,7 +16,82 @@ import DashboardTab from './DashboardTab';
 import DiscoveryTab from './DiscoveryTab';
 import PipelineTab from './PipelineTab';
 import OpportunitiesTab from './OpportunitiesTab';
-import MentorChatTab from './MentorChatTab';
+import ChatChannelTab from './ChatChannel';
+
+const FALLBACK_CANDIDATES: Candidate[] = [
+  {
+    id: 'c_sarah_j',
+    name: 'Sarah Jenkins',
+    university: 'Munich University of Applied Sciences',
+    skills: ['SolidWorks Pro', 'AutoCAD', 'Thermodynamics', 'PCB Design', 'RFID Tech', 'Data Analysis'],
+    score: 85,
+    stage: 'Talent Pool',
+    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=300',
+    saved: false,
+    weProducts: ['WSEN-TIDS Temperature Sensor', 'MagI3C FISM Power Module', 'WE-RFID RFID Inlay'],
+    projects: [
+      { title: 'Smart Inventory Tracker', description: 'IoT inventory system using Würth RFID tags with real-time dashboard.', tech: ['Python', 'MQTT', 'React', 'RFID'], components: ['WE-RFID RFID Inlay', 'WSEN-TIDS Temperature Sensor'] },
+      { title: 'Thermal Shield Optimizer', description: 'FEA-based thermal shield design for high-power PCB assemblies.', tech: ['SolidWorks', 'ANSYS', 'CAD'], components: ['MagI3C FISM Power Module'] }
+    ]
+  },
+  {
+    id: 'c_lukas_m',
+    name: 'Lukas Miller',
+    university: 'Technische Universität München',
+    skills: ['Power Electronics', 'Simulink', 'PCB Design', 'Converter Topologies', 'Altium Designer'],
+    score: 94,
+    stage: 'Talent Pool',
+    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=300',
+    saved: false,
+    weProducts: ['WE-CPIB Power Inductor', 'WE-MAPI Metal Alloy Inductor', 'REDEXPERT Simulation Tool'],
+    projects: [
+      { title: 'Bi-Directional Buck-Boost Converter', description: 'Designed high-frequency converter layout for battery systems.', tech: ['Altium', 'LTspice', 'MATLAB'], components: ['WE-CPIB Power Inductor', 'WE-MAPI Metal Alloy Inductor'] }
+    ]
+  },
+  {
+    id: 'c_elena_r',
+    name: 'Elena Rostova',
+    university: 'KIT Karlsruhe',
+    skills: ['Embedded C', 'Microcontrollers', 'BLE', 'RTOS', 'C++', 'IoT Telemetry'],
+    score: 88,
+    stage: 'Saved',
+    avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=300',
+    saved: true,
+    weProducts: ['WE-CLFS EMC Ferrite', 'WSEN-HIDS Humidity Sensor', 'WE-CBF Multilayer Capacitor'],
+    projects: [
+      { title: 'BLE Environmental Monitor', description: 'Wireless BLE sensor node for ambient humidity and temperature logging.', tech: ['Embedded C', 'BLE', 'RTOS'], components: ['WSEN-HIDS Humidity Sensor', 'WE-CBF Multilayer Capacitor'] }
+    ]
+  },
+  {
+    id: 'c_simon_w',
+    name: 'Simon Weber',
+    university: 'RWTH Aachen',
+    skills: ['Python', 'TensorFlow', 'Data Analysis', 'Matlab', 'Machine Learning'],
+    score: 76,
+    stage: 'Recruiter Review',
+    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=300',
+    saved: false,
+    weProducts: ['REDEXPERT Simulation Tool', 'WE-KI Ceramic Inductor'],
+    projects: [
+      { title: 'Predictive Fault Detection', description: 'ML model to classify PCB component failures from time-series sensor data.', tech: ['Python', 'TensorFlow', 'Matlab'], components: ['WE-KI Ceramic Inductor'] }
+    ]
+  },
+  {
+    id: 'c_anna_l',
+    name: 'Anna Lindqvist',
+    university: 'Technische Universität Stuttgart',
+    skills: ['EMC Shielding', 'RF Simulation', 'Ansys HFSS', 'Signal Integrity'],
+    score: 91,
+    stage: 'Interview Scheduled',
+    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+    saved: false,
+    weProducts: ['WE-RFI Ferrite Bead', 'WE-SHC Shielding Connector', 'WE-KI Ceramic Inductor'],
+    projects: [
+      { title: 'EMC Compliance Test Rig', description: 'Automated test bench for measuring radiated emissions and shielding effectiveness.', tech: ['Ansys HFSS', 'RF Simulation', 'Python'], components: ['WE-RFI Ferrite Bead', 'WE-SHC Shielding Connector'] }
+    ]
+  }
+];
+
 
 interface RecruiterPortalProps {
   onLogout: () => void;
@@ -100,7 +175,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       if (e.key === 'we_connect_chat_invites' && e.newValue) {
         try {
           setInvites(JSON.parse(e.newValue));
-        } catch {}
+        } catch { }
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -134,17 +209,9 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
       try {
         const { data: candidatesData, error } = await supabase.from('candidates').select('*');
         if (error) throw error;
-        if (candidatesData) {
-          const mappedCandidates: Candidate[] = candidatesData.map((c: any) => ({
-            id: c.id,
-            name: c.name,
-            university: c.university,
-            skills: c.skills || [],
-            score: c.score || c.engagementScore || 85,
-            stage: c.stage || 'Talent Pool',
-            avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
-            saved: c.saved || false,
-            projects: c.projects || [
+        if (candidatesData && candidatesData.length > 0) {
+          const mappedCandidates: Candidate[] = candidatesData.map((c: any) => {
+            const projects = c.projects || [
               {
                 title: 'Academic Capstone / Coursework',
                 description: `Applied learning project focusing on ${c.skills && c.skills.length > 0 ? c.skills[0] : 'Engineering'}.`,
@@ -153,8 +220,23 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                   ? ['MagI3C Power Module', 'REDCUBE Terminals']
                   : ['WE-KI Ceramic Inductors']
               }
-            ]
-          }));
+            ];
+            // Aggregate weProducts from all project components if not stored separately
+            const weProducts: string[] = c.we_products || c.weProducts ||
+              Array.from(new Set(projects.flatMap((p: any) => p.components || [])));
+            return {
+              id: c.id,
+              name: c.name,
+              university: c.university,
+              skills: c.skills || [],
+              score: c.score || c.engagementScore || 85,
+              stage: c.stage || 'Talent Pool',
+              avatarUrl: c.avatar_url || c.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=150',
+              saved: c.saved || false,
+              weProducts,
+              projects
+            };
+          });
           if (!mappedCandidates.some(c => c.id === 'c_sarah_j')) {
             mappedCandidates.push({
               id: 'c_sarah_j',
@@ -165,11 +247,12 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               stage: 'Recruiter Review',
               avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=150',
               saved: true,
+              weProducts: ['WSEN-TIDS Temperature Sensor', 'MagI3C FISM Power Module'],
               projects: [{
                 title: 'Smart Inventory Tracker',
                 description: 'IoT sensor network for real-time inventory tracking.',
                 tech: ['Embedded C', 'LoRaWAN'],
-                components: ['WSEN Thermals', 'MagI3C Power Module']
+                components: ['WSEN-TIDS Temperature Sensor', 'MagI3C FISM Power Module']
               }]
             });
           }
@@ -183,6 +266,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               stage: 'Talent Pool',
               avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=150',
               saved: false,
+              weProducts: ['WE-KI Ceramic Inductors', 'WE-RFI Ferrite Beads'],
               projects: [{
                 title: 'RFID Access System',
                 description: 'Secure access control using RFID tags and custom antennas.',
@@ -192,9 +276,12 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             });
           }
           setCandidates(mappedCandidates);
+        } else {
+          setCandidates(FALLBACK_CANDIDATES);
         }
       } catch (e) {
-        console.error('Could not fetch candidates from Supabase:', e);
+        console.error('Could not fetch candidates from Supabase, using mock fallback:', e);
+        setCandidates(FALLBACK_CANDIDATES);
       }
 
       // 2. Fetch Postings, Applications, and Registrations from Supabase
@@ -214,7 +301,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
         const { data: jobsData, error: jobsErr } = await supabase.from('opportunities').select('*');
         const { data: appsData } = await supabase.from('opportunity_applications').select('*');
         const { data: candsData } = await supabase.from('candidates').select('*');
-        
+
         if (jobsErr) throw jobsErr;
         if (jobsData) {
           const mappedJobs = jobsData.map((o: any) => {
@@ -269,7 +356,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
   }, []);
 
   // Window navigation
-  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'mentorchat' | 'pipeline' | 'opportunities'>('dashboard');
+  const [currentTab, setCurrentTab] = useState<'dashboard' | 'discovery' | 'pipeline' | 'opportunities' | 'chat'>('dashboard');
 
   // Custom alert feedback
   const [toast, setToast] = useState<string | null>(null);
@@ -291,7 +378,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           let skills = p.requiredSkills && p.requiredSkills.length > 0
             ? p.requiredSkills
             : ['Project Management'];
-            
+
           if (!p.requiredSkills || p.requiredSkills.length === 0) {
             const lowerTitle = p.title.toLowerCase();
             if (lowerTitle.includes('power') || lowerTitle.includes('energy') || lowerTitle.includes('voltage') || lowerTitle.includes('choke') || lowerTitle.includes('inductor')) {
@@ -308,7 +395,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
           }
 
           db.addOpportunity(p.title, p.type, p.deadline, skills, `Join us as a ${p.title}. Lead hardware layouts and systems integration research.`);
-          
+
           // Sync to Supabase
           supabase.from('opportunities').insert({
             id: p.id,
@@ -320,7 +407,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             skills: skills.join(', '),
             required_skills: skills,
             status: 'Active'
-          }).then(() => {});
+          }).then(() => { });
         }
       });
 
@@ -453,15 +540,20 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
     }
   };
 
-  const activeInvite = selectedCandidateForModal
-    ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
-    : null;
 
-  const isAnonymized = false;
+
+
   const getMaskedName = (cand: Candidate) => {
     const initials = cand.name.split(' ').map(n => n[0]).join('');
     return `Candidate #${initials}${cand.score}`;
   };
+
+  const activeInvite = selectedCandidateForModal
+    ? invites.find(inv => inv.candidateId === selectedCandidateForModal.id)
+    : null;
+
+  const isProfileShared = !!(activeInvite && activeInvite.studentSharedProfile);
+  const isAnonymized = !isProfileShared;
 
   return (
     <div id="recruiter-portal-root" className="h-screen overflow-hidden bg-slate-50 flex font-sans text-slate-800">
@@ -542,17 +634,7 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             </div>
           </button>
 
-          <button
-            id="tab-recruiter-mentorchat"
-            onClick={() => setCurrentTab('mentorchat')}
-            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'mentorchat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
-              }`}
-          >
-            <div className="flex items-center gap-3">
-              <Coffee className="w-4 h-4" />
-              <span>Mentor Chats</span>
-            </div>
-          </button>
+
 
           <button
             id="tab-recruiter-opportunities"
@@ -564,6 +646,23 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               <Briefcase className="w-4 h-4" />
               <span>Opportunities</span>
             </div>
+          </button>
+
+          <button
+            id="tab-recruiter-chat"
+            onClick={() => setCurrentTab('chat')}
+            className={`w-full text-left px-4 py-2.5 rounded-lg text-xs font-medium flex items-center justify-between transition cursor-pointer ${currentTab === 'chat' ? 'bg-slate-800 text-white border-l-4 border-red-600' : 'hover:bg-slate-900 hover:text-white'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <MessageSquare className="w-4 h-4" />
+              <span>Chat</span>
+            </div>
+            {invites.filter(inv => inv.status !== 'rejected').length > 0 && (
+              <span className="bg-red-600 text-white font-mono text-[9px] px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                {invites.filter(inv => inv.status !== 'rejected').length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -624,6 +723,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
               setCandidates={handleSetCandidates}
               showToast={showToast}
               onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
+              invites={invites}
+              setInvites={setInvites}
+              onSendInvite={handleSendInvite}
+              managerProfile={managerProfile}
             />
           )}
 
@@ -634,23 +737,27 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             />
           )}
 
-          {currentTab === 'mentorchat' && (
-            <MentorChatTab
-              candidates={candidates}
-              invites={invites}
-              setInvites={setInvites}
-              setCandidates={handleSetCandidates}
-              managerProfile={managerProfile}
-              showToast={showToast}
-              onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
-            />
-          )}
-
           {currentTab === 'opportunities' && (
             <OpportunitiesTab
               postings={postings}
               setPostings={handleSetPostings}
               showToast={showToast}
+            />
+          )}
+
+          {currentTab === 'chat' && (
+            <ChatChannelTab
+              candidates={candidates}
+              invites={invites}
+              managerProfile={managerProfile}
+              sentInvites={invites.filter(inv => inv.status !== 'rejected')}
+              acceptedInvites={invites.filter(inv => inv.status === 'accepted')}
+              getMaskedName={(cand, score) => {
+                const initials = cand.name.split(' ').map((n: string) => n[0]).join('');
+                return `Candidate #${initials}${score ?? ''}`;
+              }}
+              showToast={showToast}
+              setInvites={setInvites}
             />
           )}
         </div>
@@ -737,8 +844,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                           : 'ENG SCORE'}
                       </span>
                       <span className="text-red-600 font-sans font-bold text-sm block mt-0.5">
-                        {(selectedCandidateForModal as any).calculatedScore !== undefined 
-                          ? (selectedCandidateForModal as any).calculatedScore 
+                        {(selectedCandidateForModal as any).calculatedScore !== undefined
+                          ? (selectedCandidateForModal as any).calculatedScore
                           : selectedCandidateForModal.score}/100
                       </span>
                     </div>
@@ -761,14 +868,13 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                       (ms: string) => ms.toLowerCase() === s.toLowerCase()
                     );
                     return (
-                        <span 
-                          key={idx} 
-                          className={`inline-flex items-center whitespace-nowrap text-[10px] px-2 py-1 rounded-md font-semibold border ${
-                            isMatched 
-                              ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10' 
-                              : 'bg-white border-slate-200 text-slate-700'
+                      <span
+                        key={idx}
+                        className={`inline-flex items-center whitespace-nowrap text-[10px] px-2 py-1 rounded-md font-semibold border ${isMatched
+                            ? 'bg-emerald-600 border-emerald-600 text-white shadow shadow-emerald-500/10'
+                            : 'bg-white border-slate-200 text-slate-700'
                           }`}
-                        >
+                      >
                         {s}
                       </span>
                     );
@@ -807,6 +913,26 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                   )}
                 </div>
 
+                {/* WE Product Experience Section */}
+                {selectedCandidateForModal.weProducts && selectedCandidateForModal.weProducts.length > 0 && (
+                  <div className="mt-5 pt-4 border-t border-slate-200">
+                    <span className="text-[9px] text-slate-400 font-mono uppercase tracking-widest block font-semibold flex items-center gap-1.5 mb-2.5">
+                      <span className="bg-red-600 text-white px-1.5 py-0.5 rounded text-[8px] font-black tracking-tighter">WE</span>
+                      Product Experience
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {selectedCandidateForModal.weProducts.map((prod, idx) => (
+                        <span
+                          key={idx}
+                          className="inline-flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg border border-red-200 bg-red-50 text-red-800 font-semibold"
+                        >
+                          {prod}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Projects Section */}
                 {selectedCandidateForModal.projects && selectedCandidateForModal.projects.length > 0 && (
                   <div className="mt-5 pt-4 border-t border-slate-200">
@@ -831,10 +957,10 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
                     </div>
                   </div>
                 )}
-                
+
                 {/* CV Actions Section */}
                 <div className="mt-6 flex flex-col gap-3">
-                  <button 
+                  <button
                     onClick={() => {
                       showToast(`Downloaded ${selectedCandidateForModal.name.replace(/\s+/g, '_')}_Resume.pdf`);
                     }}
