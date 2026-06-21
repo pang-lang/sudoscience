@@ -734,6 +734,8 @@ export default function RecruiterPortal({ onLogout }: RecruiterPortalProps) {
             <PipelineTab
               candidates={candidates}
               transitionCandidateStage={transitionCandidateStage}
+              invites={invites}
+              onViewCandidate={(cand) => setSelectedCandidateForModal(cand)}
             />
           )}
 
